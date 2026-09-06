@@ -204,10 +204,20 @@ export function Contato() {
     }
   };
 
+  const handleFromUrl = (url: string) => {
+    try {
+      const first = new URL(url).pathname.split("/").filter(Boolean)[0] ?? "";
+      return first ? (first.startsWith("@") ? first : `@${first}`) : url;
+    } catch {
+      return url;
+    }
+  };
+  const whatsappHref = settings.whatsapp.startsWith("http") ? settings.whatsapp : `https://wa.me/${settings.whatsapp}`;
+
   const socials = [
-    { name: "Instagram", handle: "@alkaia", href: settings.instagram, icon: <IconInstagram className="h-6 w-6" /> },
-    { name: "TikTok", handle: "@alkaia", href: settings.tiktok, icon: <IconTikTok className="h-6 w-6" /> },
-    { name: "WhatsApp", handle: settings.whatsappDisplay, href: `https://wa.me/${settings.whatsapp}`, icon: <IconWhatsApp className="h-6 w-6" /> },
+    { name: "Instagram", handle: handleFromUrl(settings.instagram), href: settings.instagram, icon: <IconInstagram className="h-6 w-6" /> },
+    { name: "TikTok", handle: handleFromUrl(settings.tiktok), href: settings.tiktok, icon: <IconTikTok className="h-6 w-6" /> },
+    { name: "WhatsApp", handle: settings.whatsappDisplay, href: whatsappHref, icon: <IconWhatsApp className="h-6 w-6" /> },
     { name: "E-mail", handle: settings.email, href: `mailto:${settings.email}`, icon: <IconMail className="h-6 w-6" /> },
   ];
 
