@@ -1,23 +1,46 @@
 @import "tailwindcss";
 
+/* ============================================================
+   ALKAIA — Living Design System · Direção "Ateliê de Luz"
+   Tokens fundamentais. Nunca use valores soltos nas páginas:
+   consulte docs/DESIGN_SYSTEM.md antes de alterar.
+   ============================================================ */
+
 @theme {
+  /* ---- Tipografia ---- */
   --font-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-  /* Paleta ALKAIA — luz natural, areia, terracota discreta */
-  --color-cream: #f8f2ea;
-  --color-cream-2: #f2eae0;
-  --color-linen: #efe6d9;
-  --color-sand: #e5d7c2;
-  --color-dune: #d3be9f;
-  --color-clay: #c08a6d;
-  --color-terra: #a8634a;
-  --color-terra-dark: #844936;
-  --color-ink: #2a221b;
-  --color-ink-soft: #6d5d4f;
-  --color-olive: #6d7155;
-  --color-gold: #b8905e;
-  --color-ghost: #fbf8f3;
+  /* ---- Paleta ALKAIA — luz natural, areia, terracota discreta ---- */
+  --color-cream: #f8f2ea;      /* Background principal */
+  --color-cream-2: #f2eae0;    /* Background alternado de seções */
+  --color-linen: #efe6d9;      /* Surface suave (hover, chips) */
+  --color-sand: #e5d7c2;       /* Surface média, bordas visíveis */
+  --color-dune: #d3be9f;       /* Detalhes, ornamentos */
+  --color-clay: #c08a6d;       /* Accent secundário */
+  --color-terra: #a8634a;      /* PRIMARY — marca, CTAs, ativos */
+  --color-terra-dark: #844936; /* Primary hover/pressed */
+  --color-ink: #2a221b;        /* Texto principal */
+  --color-ink-soft: #6d5d4f;   /* Texto secundário / muted */
+  --color-olive: #6d7155;      /* Accent botânico / success */
+  --color-gold: #b8905e;       /* Detalhe premium (usar com moderação) */
+  --color-ghost: #fbf8f3;      /* Surface elevada (cards, dropdowns) */
+
+  /* ---- Feedback ---- */
+  --color-success: #5f7350;
+  --color-warning: #b8905e;
+  --color-error: #9c4430;
+
+  /* ---- Motion (categorias do sistema) ---- */
+  --ease-alkaia: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --duration-micro: 150ms;
+  --duration-short: 300ms;
+  --duration-medium: 600ms;
+  --duration-long: 900ms;
+
+  /* ---- Sombras ---- */
+  --shadow-veil: 0 24px 50px -25px rgba(42, 34, 27, 0.45);
+  --shadow-whisper: 0 10px 30px -18px rgba(42, 34, 27, 0.35);
 }
 
 @layer base {
@@ -41,6 +64,24 @@
     color: var(--color-cream);
   }
   img { display: block; }
+
+  /* Acessibilidade: foco visível consistente em todo o site */
+  :focus-visible {
+    outline: 2px solid var(--color-terra);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* Acessibilidade: respeitar prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .reveal-hidden { opacity: 1; transform: none; }
+  }
 }
 
 @layer components {
@@ -54,13 +95,13 @@
     @apply text-[11px] font-medium tracking-[0.28em] uppercase;
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 text-sm font-medium tracking-wide transition-all duration-300 bg-ink text-cream px-7 py-3.5 hover:bg-terra-dark;
+    @apply inline-flex items-center justify-center gap-2 text-sm font-medium tracking-wide transition-all duration-300 bg-ink text-cream px-7 py-3.5 hover:bg-terra-dark active:bg-terra-dark disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 text-sm font-medium tracking-wide transition-all duration-300 border border-ink/25 px-7 py-3.5 text-ink hover:border-ink hover:bg-ink hover:text-cream;
+    @apply inline-flex items-center justify-center gap-2 text-sm font-medium tracking-wide transition-all duration-300 border border-ink/25 px-7 py-3.5 text-ink hover:border-ink hover:bg-ink hover:text-cream active:bg-ink active:text-cream disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-light {
-    @apply inline-flex items-center justify-center gap-2 text-sm font-medium tracking-wide transition-all duration-300 bg-cream text-ink px-7 py-3.5 hover:bg-ink hover:text-cream;
+    @apply inline-flex items-center justify-center gap-2 text-sm font-medium tracking-wide transition-all duration-300 bg-cream text-ink px-7 py-3.5 hover:bg-ink hover:text-cream active:bg-ink active:text-cream disabled:cursor-not-allowed disabled:opacity-50;
   }
   .hairline {
     @apply h-px w-full bg-ink/10;
@@ -74,6 +115,7 @@
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
+/* ---- Motion System — categorias: micro/short/medium/long ---- */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
@@ -91,8 +133,12 @@
   50% { transform: translateY(-10px); }
 }
 .reveal-hidden { opacity: 0; transform: translateY(24px); }
-.reveal-shown { opacity: 1; transform: translateY(0); transition: opacity 0.9s cubic-bezier(.22,.61,.36,1), transform 0.9s cubic-bezier(.22,.61,.36,1); }
-.animate-fade-up { animation: fadeUp 0.8s cubic-bezier(.22,.61,.36,1) both; }
+.reveal-shown {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity var(--duration-long) var(--ease-alkaia), transform var(--duration-long) var(--ease-alkaia);
+}
+.animate-fade-up { animation: fadeUp 0.8s var(--ease-alkaia) both; }
 .animate-fade-in { animation: fadeIn 0.8s ease both; }
 .animate-flicker { animation: flicker 2.6s ease-in-out infinite; }
 .animate-float { animation: floatSlow 7s ease-in-out infinite; }

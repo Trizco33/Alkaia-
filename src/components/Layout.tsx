@@ -148,8 +148,14 @@ function Header() {
       <header className="sticky top-0 z-50 border-b border-ink/10 bg-cream/90 backdrop-blur-lg">
         <div className="shell flex h-16 items-center justify-between sm:h-[72px]">
           {/* Logo */}
-          <Link to="/" className="font-serif text-2xl tracking-[0.22em] text-ink sm:text-[26px]">
-            <span className="text-terra-dark">A</span>LKAIA
+          <Link to="/" aria-label="Alkaia — página inicial" className="flex items-center">
+            <img
+              src="/brand/logo-terracota-sm.png"
+              alt="Alkaia candles"
+              className="h-9 w-auto sm:h-10"
+              width="320"
+              height="126"
+            />
           </Link>
 
           {/* Desktop nav */}
@@ -214,9 +220,13 @@ function Header() {
         >
           {/* Drawer header */}
           <div className="flex items-center justify-between border-b border-ink/10 px-6 py-5">
-            <span className="font-serif text-xl tracking-[0.2em] text-ink">
-              <span className="text-terra-dark">A</span>LKAIA
-            </span>
+            <img
+              src="/brand/logo-terracota-sm.png"
+              alt="Alkaia candles"
+              className="h-8 w-auto"
+              width="320"
+              height="126"
+            />
             <button
               onClick={() => setOpen(false)}
               className="flex h-10 w-10 items-center justify-center rounded-full text-ink transition-colors hover:bg-linen"
@@ -345,9 +355,14 @@ function Footer() {
       <div className="shell py-14 sm:py-20">
         <div className="grid gap-12 lg:grid-cols-[1.3fr_2fr]">
           <div>
-            <div className="font-serif text-3xl tracking-[0.22em] text-ink">
-              <span className="text-terra-dark">A</span>LKAIA
-            </div>
+            <img
+              src="/brand/logo-terracota.png"
+              alt="Alkaia candles"
+              className="h-14 w-auto"
+              width="800"
+              height="316"
+              loading="lazy"
+            />
             <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-ink-soft">
               Rituais para perfumar, cuidar e transformar momentos.
             </p>

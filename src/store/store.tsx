@@ -41,7 +41,6 @@ import {
 } from "../lib/supabase";
 
 const DB_KEY = "alkaia_db_v1";
-const LOCAL_SESSION_KEY = "alkaia_session_v1";
 
 export interface AnalyticsState {
   events: Record<string, number>;
@@ -209,9 +208,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   /* ---------- Sessão de autenticação ---------- */
   useEffect(() => {
     if (!supabase) {
-      try {
-        setIsAuthed(localStorage.getItem(LOCAL_SESSION_KEY) === "1");
-      } catch {}
+      // Sem Supabase configurado não existe sessão administrativa.
+      setIsAuthed(false);
       return;
     }
     supabase.auth.getSession().then(({ data }) => {
@@ -539,18 +537,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
         return { ok: true };
       }
-      // modo local (demonstração)
-      const ok =
-        email.trim().toLowerCase() === db.settings.adminEmail.toLowerCase() &&
-        password === db.settings.adminPassword;
-      if (ok) {
-        setIsAuthed(true);
-        try {
-          localStorage.setItem(LOCAL_SESSION_KEY, "1");
-        } catch {}
-        return { ok: true };
-      }
-      return { ok: false, message: "E-mail ou senha incorretos." };
+      // Segurança: sem Supabase Auth configurado, o painel fica indisponível.
+      return {
+        ok: false,
+        message: "Painel indisponível: configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.",
+      };
     };
 
     const logout = async () => {
@@ -559,9 +550,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       setIsAuthed(false);
-      try {
-        localStorage.removeItem(LOCAL_SESSION_KEY);
-      } catch {}
     };
 
     return {

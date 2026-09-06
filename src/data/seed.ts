@@ -123,8 +123,6 @@ export interface Settings {
   shopee: string;
   mercadolivre: string;
   city: string;
-  adminEmail: string;
-  adminPassword: string;
 }
 
 /* ---------------- Imagens placeholder (até fotos reais) ---------------- */
@@ -493,8 +491,6 @@ export const seedSettings: Settings = {
   shopee: "https://shopee.com.br/alkaia",
   mercadolivre: "https://mercadolivre.com.br/alkaia",
   city: "Artur Nogueira — SP",
-  adminEmail: "admin@alkaia.com.br",
-  adminPassword: "alkaia2026",
 };
 
 export const seedDeliveryRegions: DeliveryRegion[] = [
