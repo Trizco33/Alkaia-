@@ -64,7 +64,7 @@ function Login() {
             </p>
           ) : (
             <p className="text-center text-[11px] text-ink-soft">
-              Modo demonstração: admin@alkaia.com.br · alkaia2026
+              Login indisponível: o painel exige conexão com o Supabase.
             </p>
           )}
         </div>
