@@ -8,10 +8,7 @@ import {
   ProductCard,
   IconArrow,
   IconFlame,
-  IconGlobe,
-  IconBag,
   IconPackage,
-  IconWhatsApp,
   IconLeaf,
   IconSparkle,
   IconShield,
@@ -30,13 +27,6 @@ export default function Home() {
   const featured = products.filter((p) => p.status === "active" && p.featured).slice(0, 4);
   const colFloralis = collections.find((c) => c.slug === "floralis");
   const colRituais = collections.find((c) => c.slug === "rituais");
-
-  const channels = [
-    { name: "Loja Alkaia", desc: "Compre diretamente pela nossa loja oficial.", to: "/onde-comprar", icon: <IconGlobe className="h-7 w-7" strokeWidth={1.3} /> },
-    { name: "Shopee", desc: "Prefere a Shopee? Encontre nossa loja oficial.", href: settings.shopee, icon: <IconBag className="h-7 w-7" strokeWidth={1.3} /> },
-    { name: "Mercado Livre", desc: "Escolha seus produtos pela plataforma.", href: settings.mercadolivre, icon: <IconPackage className="h-7 w-7" strokeWidth={1.3} /> },
-    { name: "WhatsApp", desc: "Tire dúvidas ou faça uma encomenda especial.", href: `https://wa.me/${settings.whatsapp}`, icon: <IconWhatsApp className="h-7 w-7" strokeWidth={1.3} /> },
-  ];
 
   return (
     <div>
@@ -63,8 +53,8 @@ export default function Home() {
             </p>
             <div className="mt-9 flex flex-wrap gap-3 animate-fade-up" style={{ animationDelay: "360ms" }}>
               <Link to="/colecoes" className="btn-light">Conhecer as coleções</Link>
-              <Link to="/onde-comprar" className="btn-outline !border-cream/40 !text-cream hover:!bg-cream hover:!text-ink">
-                Onde comprar
+              <Link to="/velas" className="btn-outline !border-cream/40 !text-cream hover:!bg-cream hover:!text-ink">
+                Comprar velas
               </Link>
             </div>
           </div>
@@ -187,38 +177,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---------- ONDE COMPRAR ---------- */}
-      <section className="shell py-20 sm:py-28">
-        <Reveal>
-          <SectionHeader
-            eyebrow="Onde comprar"
-            title="Escolha a sua forma de comprar."
-            text="Você escolhe onde prefere encontrar a Alkaia — todos os caminhos levam ao mesmo cuidado."
-          />
-        </Reveal>
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {channels.map((c, idx) => (
-            <Reveal key={c.name} delay={idx * 80}>
-              {!c.href ? (
-                <Link to={c.to!} className="group flex h-full flex-col rounded-[2px] border border-ink/10 bg-ghost p-7 transition-all hover:border-ink/30 hover:shadow-[0_16px_40px_-24px_rgba(42,34,27,0.55)]">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-linen text-terra transition-colors group-hover:bg-ink group-hover:text-cream">{c.icon}</span>
-                  <h3 className="mt-6 font-serif text-xl text-ink">{c.name}</h3>
-                  <p className="mt-2 text-[13px] leading-relaxed text-ink-soft flex-1">{c.desc}</p>
-                  <span className="mt-5 inline-flex items-center gap-2 text-[13px] font-medium text-terra">Comprar no site <IconArrow className="h-4 w-4" /></span>
-                </Link>
-              ) : (
-                <a href={c.href} target="_blank" rel="noreferrer" className="group flex h-full flex-col rounded-[2px] border border-ink/10 bg-ghost p-7 transition-all hover:border-ink/30 hover:shadow-[0_16px_40px_-24px_rgba(42,34,27,0.55)]">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-linen text-terra transition-colors group-hover:bg-ink group-hover:text-cream">{c.icon}</span>
-                  <h3 className="mt-6 font-serif text-xl text-ink">{c.name}</h3>
-                  <p className="mt-2 text-[13px] leading-relaxed text-ink-soft flex-1">{c.desc}</p>
-                  <span className="mt-5 inline-flex items-center gap-2 text-[13px] font-medium text-terra">Acessar <IconArrow className="h-4 w-4" /></span>
-                </a>
-              )}
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
       {/* ---------- BANDEIRAS ---------- */}
       <section className="border-t border-ink/10 bg-linen">
         <div className="shell grid grid-cols-2 gap-8 py-12 sm:grid-cols-4">
@@ -226,7 +184,7 @@ export default function Home() {
             { icon: <IconLeaf className="h-6 w-6" />, t: "Feito à mão", s: "Pequenos lotes" },
             { icon: <IconSparkle className="h-6 w-6" />, t: "Óleos essenciais", s: "Aromas autorais" },
             { icon: <IconShield className="h-6 w-6" />, t: "Cera vegetal", s: "Cuidado natural" },
-            { icon: <IconWhatsApp className="h-6 w-6" />, t: "E-commerce", s: "Multi-canais" },
+            { icon: <IconPackage className="h-6 w-6" />, t: "Envio para todo o Brasil", s: "Ou retirada local" },
           ].map((b) => (
             <div key={b.t} className="flex flex-col items-center text-center">
               <span className="text-terra">{b.icon}</span>

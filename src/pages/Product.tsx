@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useStore } from "../store/store";
 import { useSeo } from "../components/Layout";
-import { ProductCard, ChannelButtons, Reveal, IconArrow, IconLeaf, IconFlame, IconDrop, IconShield, IconMapPin, IconCheck } from "../components/ui";
+import { ProductCard, AddToCart, Reveal, IconArrow, IconLeaf, IconFlame, IconDrop, IconShield, IconMapPin, IconCheck } from "../components/ui";
 
 export default function Product() {
   const { slug } = useParams();
@@ -131,12 +131,8 @@ export default function Product() {
             </>
           )}
 
-          {/* Onde você prefere comprar */}
-          <div className="mt-8 rounded-[2px] border border-ink/10 bg-ghost p-5">
-            <p className="font-serif text-lg text-ink">Onde você prefere comprar?</p>
-            <p className="mt-1 text-[12px] text-ink-soft">Escolha o canal que preferir — o produto é o mesmo.</p>
-            <ChannelButtons product={product} className="mt-4" />
-          </div>
+          {/* Comprar */}
+          <AddToCart product={product} className="mt-8" />
 
           <div className="mt-6 flex flex-wrap gap-4 text-[12px] text-ink-soft">
             {product.availableForPickup && (

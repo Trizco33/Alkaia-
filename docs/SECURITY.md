@@ -10,7 +10,7 @@
 | Header | Valor | Por quê |
 |---|---|---|
 | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` | Força HTTPS sempre |
-| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'` | Limita de onde scripts, imagens e conexões podem vir |
+| `Content-Security-Policy` | `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://viacep.com.br` (+ restrições de script/style/img/font — valor completo em `vercel.json`) | Limita de onde scripts, imagens e conexões podem vir. `viacep.com.br` entrou para o preenchimento de endereço no checkout |
 | `X-Content-Type-Options` | `nosniff` | Impede sniffing de MIME |
 | `X-Frame-Options` | `DENY` | Impede o site de ser embutido em iframe (clickjacking) |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | Não vaza URLs completas |
@@ -30,6 +30,7 @@
 - **RLS habilitado em todas as tabelas.**
 - Catálogo (`products`, `collections`, `settings`): leitura pública, escrita **somente admin** (via `is_admin()`).
 - `special_orders`, `contact_messages`, `analytics_events`: visitante só consegue **inserir** (insert-only); leitura/gestão somente admin.
+- `orders` (vendas): visitante **não escreve nem lê nada** pelo site — inserção só pelas Edge Functions (service role, ignora RLS); leitura/atualização só admin via `is_admin()`.
 - **Cadastro público de usuários desligado** (`disable_signup: true`) — ninguém consegue criar conta nova.
 - Tabela `public.admin_users` + função `public.is_admin()` (security definer) controlam quem é admin; 9 políticas de escrita/gestão usam `is_admin()`. Única admin cadastrada: conta da proprietária.
 
@@ -52,6 +53,8 @@ Se um dia for preciso adicionar outro admin: inserir o `user_id` dele em `public
 
 - Nunca commitar `.env.local`, tokens ou chaves (verificar `.gitignore`).
 - Nunca usar a `service_role` key no frontend.
+- **Pagamentos**: `MP_ACCESS_TOKEN` (Mercado Pago) e `SUPERFRETE_TOKEN` vivem apenas como secrets das Edge Functions (`supabase secrets set`) — nunca no frontend nem no repo. Preço, estoque e frete são sempre revalidados no servidor (`create-order`); o valor vindo do browser nunca é usado para cobrar.
+- O webhook do MP (`mp-webhook`) não confia no corpo da notificação: sempre reconsulta o pagamento na API do Mercado Pago antes de atualizar o pedido.
 - Ao adicionar domínio externo novo (fonte, imagem, API), atualizar a CSP nos dois arquivos de config **e** registrar aqui.
 - Revisar as políticas RLS sempre que criar tabela nova — RLS ligado sem política = tudo bloqueado (seguro por padrão).
 - Trocar a senha da conta admin se houver qualquer suspeita de vazamento.

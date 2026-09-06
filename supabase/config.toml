@@ -1,0 +1,11 @@
+# Configuração das edge functions (usada pelo CLI no deploy)
+
+[functions.shipping-quote]
+verify_jwt = true
+
+[functions.create-order]
+verify_jwt = true
+
+# Webhook do Mercado Pago precisa ser público
+[functions.mp-webhook]
+verify_jwt = false

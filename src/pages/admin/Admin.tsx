@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "../../store/store";
 import { useSeo } from "../../components/Layout";
 import { IconFlame, IconClose, IconPlus, IconCheck } from "../../components/ui";
+import { supabase } from "../../lib/supabase";
 import type { Product, Collection, DeliveryRegion } from "../../data/seed";
 
 const emptyRegion = (): Omit<DeliveryRegion, "id"> => ({ name: "", type: "entrega", note: "" });
@@ -173,8 +174,6 @@ function ProductEditor({ initial, onDone }: { initial: Product; onDone: () => vo
   const [notes, setNotes] = useState(initial.aromaticNotes.join("\n"));
 
   const set = (patch: Partial<Product>) => setF((p) => ({ ...p, ...patch }));
-  const setChan = (k: keyof Product["channels"], v: boolean) => set({ channels: { ...f.channels, [k]: v } });
-  const setLink = (k: keyof Product["links"], v: string) => set({ links: { ...f.links, [k]: v } });
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -264,26 +263,6 @@ function ProductEditor({ initial, onDone }: { initial: Product; onDone: () => vo
             <label key={k} className="flex items-center gap-2 rounded-full border border-ink/15 px-4 py-2 text-[12px] text-ink">
               <input type="checkbox" checked={f[k] as boolean} onChange={(e) => set({ [k]: e.target.checked } as any)} /> {label}
             </label>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <p className="mb-3 text-[12px] font-medium uppercase tracking-wide text-ink-soft">Canais de compra</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {([
-            ["site", "Loja / site", "site"],
-            ["shopee", "Shopee", "shopee"],
-            ["mercadolivre", "Mercado Livre", "mercadolivre"],
-            ["whatsapp", "WhatsApp", "whatsapp"],
-          ] as const).map(([k, label, linkKey]) => (
-            <div key={k} className="rounded-[2px] border border-ink/10 bg-ghost p-3">
-              <label className="flex items-center gap-2 text-[13px] text-ink">
-                <input type="checkbox" checked={f.channels[k]} onChange={(e) => setChan(k, e.target.checked)} />
-                <span className="font-medium">{label} (ativo)</span>
-              </label>
-              <input className={`${fieldCls()} mt-2`} placeholder={`Link ${label}`} value={f.links[linkKey] || ""} onChange={(e) => setLink(k as any, e.target.value)} />
-            </div>
           ))}
         </div>
       </div>
@@ -496,6 +475,163 @@ function OrdersManager() {
   );
 }
 
+/* ---------------- Vendas (pedidos do site) ---------------- */
+interface SaleItem {
+  productId: string;
+  name: string;
+  qty: number;
+  unitPrice: number;
+}
+interface Sale {
+  id: string;
+  status: string;
+  items: SaleItem[];
+  subtotal: number;
+  shipping_method: string;
+  shipping_price: number;
+  total: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  address: { cep?: string; street?: string; number?: string; complement?: string; district?: string; city?: string; state?: string } | null;
+  note: string | null;
+  tracking_code: string | null;
+  created_at: string;
+}
+
+const saleStatusLabel: Record<string, string> = {
+  pendente: "Aguardando pagamento",
+  pago: "Pago",
+  em_preparo: "Em preparo",
+  enviado: "Enviado",
+  entregue: "Entregue",
+  cancelado: "Cancelado",
+  reembolsado: "Reembolsado",
+};
+
+function SaleStatusBadge({ s }: { s: string }) {
+  const tone =
+    s === "pago" || s === "entregue"
+      ? "bg-olive/15 text-olive"
+      : s === "cancelado" || s === "reembolsado"
+        ? "bg-terra/15 text-terra-dark"
+        : "bg-linen text-ink-soft";
+  return <span className={`rounded-full px-3 py-1 text-[11px] font-medium ${tone}`}>{saleStatusLabel[s] || s}</span>;
+}
+
+function SalesManager() {
+  const { formatPrice } = useStore();
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+
+  const load = async () => {
+    if (!supabase) {
+      setErr("As vendas ficam disponíveis apenas com o site conectado ao Supabase.");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) setErr("Não foi possível carregar as vendas: " + error.message);
+    else {
+      setErr("");
+      setSales((data as Sale[]) || []);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const update = async (id: string, patch: Partial<Pick<Sale, "status" | "tracking_code">>) => {
+    if (!supabase) return;
+    const { error } = await supabase.from("orders").update(patch).eq("id", id);
+    if (error) alert("Erro ao salvar: " + error.message);
+    else setSales((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-2xl text-ink">Vendas do site</h2>
+        <button onClick={load} className="btn-outline !px-4 !py-2 !text-[12px]">Atualizar</button>
+      </div>
+      {loading ? (
+        <p className="mt-6 text-[14px] text-ink-soft">Carregando…</p>
+      ) : err ? (
+        <p className="mt-6 rounded-[2px] bg-terra/10 px-4 py-3 text-[13px] text-terra-dark">{err}</p>
+      ) : sales.length === 0 ? (
+        <p className="mt-6 text-[14px] text-ink-soft">Nenhuma venda ainda. Assim que alguém comprar pelo site, o pedido aparece aqui.</p>
+      ) : (
+        <div className="mt-6 space-y-3">
+          {sales.map((o) => (
+            <div key={o.id} className="rounded-[2px] border border-ink/10 bg-ghost p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <SaleStatusBadge s={o.status} />
+                    <span className="text-[11px] text-ink-soft/70">
+                      {new Date(o.created_at).toLocaleString("pt-BR")} · nº {o.id.slice(0, 8)}
+                    </span>
+                  </div>
+                  <p className="mt-2 font-medium text-ink">{o.customer_name}</p>
+                  <p className="text-[12px] text-ink-soft">{o.customer_email} · {o.customer_phone}</p>
+                  <ul className="mt-2 space-y-1 text-[13px] text-ink">
+                    {(o.items || []).map((i, idx) => (
+                      <li key={idx}>{i.qty}× {i.name} — {formatPrice(i.unitPrice * i.qty)}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-[12px] text-ink-soft">
+                    {o.shipping_method === "retirada"
+                      ? "Retirada local (grátis)"
+                      : `${o.shipping_method.toUpperCase()} — ${formatPrice(o.shipping_price)}`}
+                    {" · "}
+                    <span className="font-medium text-ink">Total {formatPrice(o.total)}</span>
+                  </p>
+                  {o.address && (
+                    <p className="mt-1 text-[12px] text-ink-soft">
+                      {o.address.street}, {o.address.number}
+                      {o.address.complement ? ` — ${o.address.complement}` : ""} · {o.address.district} · {o.address.city}/{o.address.state} · CEP {o.address.cep}
+                    </p>
+                  )}
+                  {o.note && <p className="mt-1 text-[12px] italic text-ink-soft">“{o.note}”</p>}
+                </div>
+                <div className="flex w-full max-w-[220px] flex-col gap-2">
+                  <select
+                    className={fieldCls()}
+                    value={o.status}
+                    onChange={(e) => update(o.id, { status: e.target.value })}
+                  >
+                    {Object.entries(saleStatusLabel).map(([v, l]) => (
+                      <option key={v} value={v}>{l}</option>
+                    ))}
+                  </select>
+                  <input
+                    className={fieldCls()}
+                    placeholder="Código de rastreio"
+                    defaultValue={o.tracking_code || ""}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (v !== (o.tracking_code || "")) update(o.id, { tracking_code: v });
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---------------- Messages ---------------- */
 function MessagesManager() {
   const { messages, deleteMessage } = useStore();
@@ -541,8 +677,6 @@ function SettingsManager() {
     { label: "WhatsApp (exibição)", key: "whatsappDisplay" },
     { label: "Instagram", key: "instagram" },
     { label: "TikTok", key: "tiktok" },
-    { label: "Shopee", key: "shopee" },
-    { label: "Mercado Livre", key: "mercadolivre" },
     { label: "Cidade", key: "city" },
   ];
 
@@ -634,7 +768,7 @@ function SettingsManager() {
 }
 
 /* ---------------- Shell ---------------- */
-const tabs = ["Dashboard", "Produtos", "Coleções", "Categorias", "Encomendas", "Mensagens", "Configurações"] as const;
+const tabs = ["Dashboard", "Vendas", "Produtos", "Coleções", "Categorias", "Encomendas", "Mensagens", "Configurações"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function Admin() {
@@ -696,6 +830,7 @@ export default function Admin() {
         </div>
         <div className="mt-8">
           {tab === "Dashboard" && <Dashboard />}
+          {tab === "Vendas" && <SalesManager />}
           {tab === "Produtos" && <ProductManager />}
           {tab === "Coleções" && <CollectionManager />}
           {tab === "Categorias" && <CategoryManager />}

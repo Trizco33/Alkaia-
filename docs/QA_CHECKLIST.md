@@ -22,10 +22,22 @@
 
 - [ ] **Home** — hero, seções com reveal, CTAs funcionando.
 - [ ] **Catálogo** — grid de produtos, filtros, imagens carregando.
-- [ ] **Produto** — galeria, descrição, botão de pedido.
+- [ ] **Produto** — galeria, descrição, stepper de quantidade, "Adicionar ao carrinho" e "Comprar agora"; estado esgotado quando estoque = 0.
 - [ ] **Sobre / Contato** — formulário envia (ou falha com mensagem clara).
 - [ ] **Admin** — login via Supabase funciona; sem Supabase, login recusa com erro claro (não loga silenciosamente).
 - [ ] Drawer mobile abre/fecha suave, logo visível, links navegam.
+
+## 3b. Loja (carrinho + checkout)
+
+- [ ] Badge do carrinho no header atualiza ao adicionar/remover itens (todas as telas).
+- [ ] **Carrinho** — alterar quantidade, remover item, subtotal correto; carrinho persiste após recarregar a página (localStorage).
+- [ ] **Checkout** — ViaCEP preenche endereço; cotação de frete aparece (PAC/SEDEX); retirada local = frete grátis; validação impede envio com campos vazios.
+- [ ] Sem functions/secrets configuradas: checkout mostra aviso de manutenção (não quebra).
+- [ ] **Confirmação** — `/#/pedido/confirmacao?order=...` renderiza com o número do pedido.
+- [ ] `/#/onde-comprar` redireciona para `/#/velas`.
+- [ ] Nenhuma menção a Shopee/Mercado Livre/compra por WhatsApp fora de Contato e Encomendas.
+- [ ] **Admin → Vendas** — pedidos listam; status e código de rastreio salvam.
+- [ ] Fluxo real (com secrets): pedido criado → redirect ao Mercado Pago → pagamento de teste → webhook atualiza status → estoque baixa uma única vez.
 
 ## 4. Acessibilidade
 

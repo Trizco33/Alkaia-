@@ -498,16 +498,16 @@ export const seedDeliveryRegions: DeliveryRegion[] = [
   { id: "r-2", name: "Artur Nogueira — SP", type: "entrega", note: "Entrega local combinada com a cliente. Valores definidos no momento do pedido." },
   { id: "r-3", name: "Holambra — SP", type: "entrega", note: "Entrega local combinada com a cliente. Valores definidos no momento do pedido." },
   { id: "r-4", name: "Região — Artur Nogueira / Holambra", type: "entrega", note: "Regiões próximas atendidas mediante combinação." },
-  { id: "r-5", name: "Todo o Brasil", type: "envio", note: "Opções de envio dependem do canal de compra (Shopee, Mercado Livre ou WhatsApp)." },
+  { id: "r-5", name: "Todo o Brasil", type: "envio", note: "O pedido é embalado com cuidado e despachado após a confirmação do pagamento." },
 ];
 
 export const seedFaqs: { q: string; a: string }[] = [
   { q: "As velas são artesanais?", a: "Sim. Todas as velas Alkaia são produzidas de forma artesanal, em pequenos lotes, com cera vegetal e óleos essenciais selecionados. Cada vela é vertida e finalizada à mão." },
   { q: "Posso escolher o aroma?", a: "Nas velas do catálogo, cada produto já tem um aroma criado pela Alkaia. Para aromas personalizados, você pode solicitar uma encomenda especial pela página Encomendas." },
   { q: "Vocês fazem encomendas especiais?", a: "Sim! Criamos encomendas personalizadas para presentes corporativos, eventos, lembranças, kits, produtos para spa e compras em quantidade. Preencha o formulário de Encomendas Especiais." },
-  { q: "Vocês enviam para todo o Brasil?", a: "Sim. Os envios para todo o Brasil são realizados pelos canais de compra (Shopee, Mercado Livre e WhatsApp), e as opções de frete dependem de cada canal." },
+  { q: "Vocês enviam para todo o Brasil?", a: "Sim. Enviamos para todo o Brasil pelos Correios (PAC ou SEDEX). O frete é calculado no checkout pelo seu CEP, e você acompanha o pedido pelo código de rastreio." },
   { q: "Posso retirar meu pedido em Artur Nogueira?", a: "Sim. A retirada é feita em Artur Nogueira — SP, mediante combinação ou agendamento prévio. Entre em contato pelo WhatsApp para combinar." },
-  { q: "Quais são as formas de compra?", a: "Você pode comprar diretamente pelo site (quando disponível), pela loja na Shopee, pelo Mercado Livre ou encomendar pelo WhatsApp. Cada produto indica os canais disponíveis." },
+  { q: "Quais são as formas de compra?", a: "Você compra diretamente aqui pelo site: adicione as velas ao carrinho e finalize com pagamento seguro pelo Mercado Pago (Pix, cartão ou boleto). Para pedidos personalizados, use a página de Encomendas Especiais." },
   { q: "Como funcionam as velas de massagem?", a: "As velas de massagem são feitas com uma cera de baixo ponto de fusão. Ao acender por alguns minutos, elas derretem em um óleo morno e perfumado, indicado para massagens e para o cuidado do corpo." },
   { q: "Vocês fazem pedidos em quantidade?", a: "Sim. Atendemos pedidos em quantidade para empresas, spas, eventos e brindes. Fale conosco pela página de Encomendas Especiais." },
   { q: "Como entrar em contato com a Alkaia?", a: "Você pode falar conosco pelo WhatsApp, Instagram, TikTok ou e-mail. Nossa equipe responde com carinho e atenção." },

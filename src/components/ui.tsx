@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { Product } from "../data/seed";
 import { useStore } from "../store/store";
+import { useCart } from "../store/cart";
 
 /* ---------------- Icons (linha, discretos) ---------------- */
 type IconProps = { className?: string; strokeWidth?: number };
@@ -202,113 +203,123 @@ export function ProductCard({ product, aspect = "aspect-[4/5]" }: { product: Pro
   );
 }
 
-/* ---------------- Buy-channel buttons ---------------- */
-export interface ChannelOption {
-  id: "site" | "shopee" | "mercadolivre" | "whatsapp";
-  label: string;
-  short: string;
-  desc: string;
-  icon: React.ReactNode;
-  enabled: boolean;
-  href: string;
-  onClick?: () => void;
-  content?: React.ReactNode;
-}
 
-export function ChannelButtons({
-  product,
-  compact = false,
-  className = "",
-}: {
-  product: Product;
-  compact?: boolean;
-  className?: string;
-}) {
-  const { settings, track } = useStore();
-  const opts = ([
-    {
-      id: "site",
-      label: "Comprar no site",
-      short: "Site",
-      desc: "Loja oficial Alkaia",
-      icon: <IconGlobe />,
-      enabled: product.channels.site,
-      href: /^https?:/.test(product.links.site || "") ? product.links.site! : "#",
-      onClick: () => track("click_buy_site", { slug: product.slug, channel: "site" }),
-    },
-    {
-      id: "shopee",
-      label: "Comprar pela Shopee",
-      short: "Shopee",
-      desc: "Nossa loja na Shopee",
-      icon: <IconBag />,
-      enabled: product.channels.shopee,
-      href: product.links.shopee || settings.shopee,
-      onClick: () => track("click_buy_shopee", { slug: product.slug, channel: "shopee" }),
-    },
-    {
-      id: "mercadolivre",
-      label: "Comprar pelo Mercado Livre",
-      short: "Mercado Livre",
-      desc: "Loja no Mercado Livre",
-      icon: <IconPackage />,
-      enabled: product.channels.mercadolivre,
-      href: product.links.mercadolivre || settings.mercadolivre,
-      onClick: () => track("click_buy_mercadolivre", { slug: product.slug, channel: "mercadolivre" }),
-    },
-    {
-      id: "whatsapp",
-      label: "Encomendar pelo WhatsApp",
-      short: "WhatsApp",
-      desc: "Falar com a Alkaia",
-      icon: <IconWhatsApp />,
-      enabled: product.channels.whatsapp,
-      href: product.links.whatsapp || `https://wa.me/${settings.whatsapp}`,
-      onClick: () => track("click_whatsapp", { slug: product.slug, channel: "whatsapp" }),
-    },
-  ] as ChannelOption[]).filter((o) => o.enabled);
+/* ---------------- Comprar (carrinho) ---------------- */
+export function AddToCart({ product, className = "" }: { product: Product; className?: string }) {
+  const { track } = useStore();
+  const { add, items } = useCart();
+  const navigate = useNavigate();
+  const [qty, setQty] = useState(1);
+  const [added, setAdded] = useState(false);
 
-  const isInternal = (href: string) => href.startsWith("/");
+  const inCart = items.find((i) => i.productId === product.id)?.qty ?? 0;
+  const out = product.stock <= 0;
+  const maxQty = Math.max(1, product.stock - inCart);
+  const full = !out && inCart >= product.stock;
 
-  const renderAnchor = (o: ChannelOption, cls: string) =>
-    isInternal(o.href) ? (
-      <Link key={o.id} to={o.href} className={cls} onClick={o.onClick}>
-        {o.content}
-      </Link>
-    ) : (
-      <a key={o.id} href={o.href} target="_blank" rel="noreferrer" className={cls} onClick={o.onClick}>
-        {o.content}
-      </a>
+  useEffect(() => {
+    setQty((q) => Math.min(Math.max(1, q), maxQty));
+  }, [maxQty]);
+
+  const doAdd = () => {
+    add(product, qty);
+    track("add_to_cart", { slug: product.slug, qty });
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), 1800);
+  };
+
+  const buyNow = () => {
+    if (inCart < product.stock) add(product, qty);
+    track("buy_now", { slug: product.slug, qty });
+    navigate("/checkout");
+  };
+
+  if (out) {
+    return (
+      <div className={className}>
+        <button
+          disabled
+          className="w-full cursor-not-allowed rounded-[2px] border border-ink/15 bg-linen px-6 py-4 text-sm font-medium tracking-wide text-ink-soft"
+        >
+          Esgotado no momento
+        </button>
+        <p className="mt-2 text-[12px] text-ink-soft">
+          Fale com a gente pela página de <Link to="/contato" className="underline text-terra">contato</Link> para saber quando volta.
+        </p>
+      </div>
     );
-
-  const withContent = opts.map((o) => ({
-    ...o,
-    content: compact ? (
-      <>
-        {o.icon}
-        {o.short}
-      </>
-    ) : (
-      <>
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-linen text-terra transition-colors group-hover:bg-ink group-hover:text-cream">
-          {o.icon}
-        </span>
-        <span className="flex-1">
-          <span className="block text-sm font-medium text-ink">{o.label}</span>
-          <span className="block text-[12px] text-ink-soft">{o.desc}</span>
-        </span>
-        <IconArrow className="h-4 w-4 text-terra transition-transform group-hover:translate-x-1" />
-      </>
-    ),
-  }));
+  }
 
   return (
-    <div className={`${compact ? "flex flex-wrap gap-2" : "grid gap-3"} ${className}`}>
-      {withContent.map((o) =>
-        compact
-          ? renderAnchor(o, "group inline-flex items-center gap-2 rounded-full border border-ink/15 px-4 py-2.5 text-[13px] font-medium text-ink transition-colors hover:border-ink hover:bg-ink hover:text-cream")
-          : renderAnchor(o, "group flex items-center gap-4 rounded-[2px] border border-ink/12 bg-ghost p-4 transition-all duration-300 hover:border-ink/30 hover:shadow-[0_14px_30px_-20px_rgba(42,34,27,0.5)]")
+    <div className={className}>
+      <div className="flex flex-wrap items-stretch gap-3">
+        {/* Stepper de quantidade */}
+        <div className="inline-flex items-center rounded-[2px] border border-ink/15 bg-ghost">
+          <button
+            type="button"
+            aria-label="Diminuir quantidade"
+            onClick={() => setQty((q) => Math.max(1, q - 1))}
+            disabled={qty <= 1 || full}
+            className="flex h-12 w-11 items-center justify-center text-ink transition-colors hover:bg-linen disabled:opacity-30"
+          >
+            <IconMinus className="h-4 w-4" />
+          </button>
+          <span className="w-10 text-center text-sm font-medium text-ink tabular-nums" aria-live="polite">
+            {full ? 0 : qty}
+          </span>
+          <button
+            type="button"
+            aria-label="Aumentar quantidade"
+            onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+            disabled={qty >= maxQty || full}
+            className="flex h-12 w-11 items-center justify-center text-ink transition-colors hover:bg-linen disabled:opacity-30"
+          >
+            <IconPlus className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Adicionar ao carrinho */}
+        <button
+          type="button"
+          onClick={doAdd}
+          disabled={full}
+          className="group flex flex-1 min-w-[180px] items-center justify-center gap-2 rounded-[2px] bg-ink px-6 py-3.5 text-sm font-medium tracking-wide text-cream transition-all duration-300 hover:bg-terra-dark disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {added ? (
+            <>
+              <IconCheck className="h-4 w-4" /> Adicionado
+            </>
+          ) : (
+            <>
+              <IconBag className="h-4 w-4" /> Adicionar ao carrinho
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Comprar agora */}
+      <button
+        type="button"
+        onClick={buyNow}
+        className="group mt-3 flex w-full items-center justify-center gap-2 rounded-[2px] border border-ink/20 bg-ghost px-6 py-3.5 text-sm font-medium tracking-wide text-ink transition-all duration-300 hover:border-ink hover:bg-linen"
+      >
+        Comprar agora
+        <IconArrow className="h-4 w-4 text-terra transition-transform group-hover:translate-x-1" />
+      </button>
+
+      {(inCart > 0 || added) && (
+        <p className="mt-3 text-[12px] text-ink-soft">
+          {inCart > 0 && (
+            <>
+              {inCart} {inCart === 1 ? "unidade" : "unidades"} no carrinho ·{" "}
+            </>
+          )}
+          <Link to="/carrinho" className="font-medium text-terra underline underline-offset-2">
+            Ver carrinho
+          </Link>
+        </p>
       )}
+      {full && <p className="mt-2 text-[12px] text-ink-soft">Você já tem todo o estoque disponível no carrinho.</p>}
     </div>
   );
 }

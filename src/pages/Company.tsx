@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useStore } from "../store/store";
 import { useSeo } from "../components/Layout";
-import { Reveal, SectionHeader, IconArrow, IconGlobe, IconBag, IconPackage, IconWhatsApp, IconMapPin, IconLeaf, IconFlame, IconSparkle, IconCheck } from "../components/ui";
+import { Reveal, SectionHeader, IconPackage, IconMapPin, IconLeaf, IconFlame, IconSparkle, IconCheck } from "../components/ui";
 import { IMAGES } from "../data/seed";
 
 /* ============ SOBRE ============ */
@@ -106,69 +106,9 @@ export function Sobre() {
   );
 }
 
-/* ============ ONDE COMPRAR ============ */
-export function OndeComprar() {
-  const { settings, track } = useStore();
-  useSeo("Onde Comprar", "Escolha onde comprar Alkaia: loja oficial, Shopee, Mercado Livre ou WhatsApp.");
-
-  const cards = [
-    { name: "Loja Alkaia", desc: "Compre diretamente pela nossa loja oficial.", btn: "Comprar no site", icon: <IconGlobe className="h-7 w-7" strokeWidth={1.3} />, href: "/", ext: false },
-    { name: "Shopee", desc: "Prefere comprar pela Shopee? Encontre nossos produtos em nossa loja oficial.", btn: "Ir para a Shopee", icon: <IconBag className="h-7 w-7" strokeWidth={1.3} />, href: settings.shopee, ext: true, en: "shopee" },
-    { name: "Mercado Livre", desc: "Prefere comprar pelo Mercado Livre? Escolha seus produtos pela plataforma.", btn: "Ir para o Mercado Livre", icon: <IconPackage className="h-7 w-7" strokeWidth={1.3} />, href: settings.mercadolivre, ext: true, en: "mercadolivre" },
-    { name: "WhatsApp", desc: "Quer tirar dúvidas ou fazer uma encomenda especial?", btn: "Falar com a Alkaia", icon: <IconWhatsApp className="h-7 w-7" strokeWidth={1.3} />, href: `https://wa.me/${settings.whatsapp}`, ext: true, en: "whatsapp" },
-  ] as const;
-
-  return (
-    <div className="shell py-16 sm:py-24">
-      <Reveal>
-        <SectionHeader
-          eyebrow="Onde comprar"
-          title="Escolha a sua forma de comprar."
-          text="Você escolhe o caminho — o cuidado é o mesmo em todos os canais."
-        />
-      </Reveal>
-
-      <div className="mt-14 grid gap-4 sm:grid-cols-2">
-        {cards.map((c, i) => (
-          <Reveal key={c.name} delay={i * 80}>
-            {c.ext ? (
-              <a
-                href={c.href}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => track("click_" + (c.en === "whatsapp" ? "whatsapp" : "buy_" + c.en), { channel: c.en })}
-                className="group flex h-full flex-col rounded-[2px] border border-ink/10 bg-ghost p-8 transition-all hover:border-ink/30 hover:shadow-[0_24px_50px_-30px_rgba(42,34,27,0.6)]"
-              >
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-linen text-terra transition-colors group-hover:bg-ink group-hover:text-cream">{c.icon}</span>
-                <h3 className="mt-7 font-serif text-2xl text-ink">{c.name}</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft flex-1">{c.desc}</p>
-                <span className="btn-outline mt-6 w-full">{c.btn} <IconArrow className="h-4 w-4" /></span>
-              </a>
-            ) : (
-              <Link to={c.href} className="group flex h-full flex-col rounded-[2px] border border-ink/10 bg-ghost p-8 transition-all hover:border-ink/30 hover:shadow-[0_24px_50px_-30px_rgba(42,34,27,0.6)]">
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-linen text-terra transition-colors group-hover:bg-ink group-hover:text-cream">{c.icon}</span>
-                <h3 className="mt-7 font-serif text-2xl text-ink">{c.name}</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft flex-1">{c.desc}</p>
-                <span className="btn-outline mt-6 w-full">{c.btn} <IconArrow className="h-4 w-4" /></span>
-              </Link>
-            )}
-          </Reveal>
-        ))}
-      </div>
-
-      <div className="mt-16 rounded-[2px] bg-ink px-6 py-12 text-center sm:px-12">
-        <IconFlame className="mx-auto h-8 w-8 text-clay animate-flicker" />
-        <h3 className="mt-4 font-serif text-3xl text-cream sm:text-4xl text-balance">Prefere algo feito para você?</h3>
-        <p className="mx-auto mt-3 max-w-md text-[14px] text-cream/70">Fale conosco pelo WhatsApp e peça sua encomenda especial.</p>
-        <Link to="/encomendas" className="btn-light mt-8">Solicitar encomenda</Link>
-      </div>
-    </div>
-  );
-}
-
 /* ============ ENTREGA E RETIRADA ============ */
 export function Entrega() {
-  const { deliveryRegions, settings, track } = useStore();
+  const { deliveryRegions, track } = useStore();
   useSeo("Entrega e Retirada", "Como receber sua Alkaia: retirada em Artur Nogueira, entrega local e envio para todo o Brasil.");
 
   useEffect(() => {
@@ -183,7 +123,7 @@ export function Entrega() {
   return (
     <div className="shell py-16 sm:py-24">
       <Reveal>
-        <SectionHeader eyebrow="Entrega e retirada" title="Como a Alkaia chega até você" text="Escolha entre retirar, receber em casa ou receber pelos canais de compra." />
+        <SectionHeader eyebrow="Entrega e retirada" title="Como a Alkaia chega até você" text="Escolha entre retirar em Artur Nogueira, receber em casa na região ou receber pelos Correios em todo o Brasil." />
       </Reveal>
 
       <div className="mt-14 grid gap-5 lg:grid-cols-3">
@@ -198,7 +138,8 @@ export function Entrega() {
               {(retirada.length ? retirada : [{ id: "x", note: "A retirada deve ser realizada mediante combinação ou agendamento prévio." }]).map((r) => (
                 <li key={r.id}>• {r.note}</li>
               ))}
-              <li>• Combine o horário pelo WhatsApp.</li>
+              <li>• Escolha "Retirada local" no checkout — sem custo de frete.</li>
+              <li>• Combinamos o horário com você após o pedido.</li>
             </ul>
           </div>
         </Reveal>
@@ -223,20 +164,21 @@ export function Entrega() {
           <div className="flex h-full flex-col rounded-[2px] border border-ink/10 bg-ghost p-8">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-linen text-terra"><IconPackage className="h-6 w-6" /></span>
             <h3 className="mt-6 font-serif text-2xl text-ink">Envio para todo o Brasil</h3>
-            <p className="mt-2 text-[14px] text-ink-soft">As opções de envio dependem do canal de compra.</p>
+            <p className="mt-2 text-[14px] text-ink-soft">Enviamos pelos Correios para qualquer lugar do Brasil.</p>
             <ul className="mt-3 space-y-2 text-[13px] text-ink-soft">
               {envio.map((r) => (
                 <li key={r.id}>• {r.note}</li>
               ))}
-              <li>• Estrutura preparada para frete automático (Correios e transportadoras).</li>
+              <li>• O frete é calculado no checkout pelo seu CEP (PAC ou SEDEX).</li>
+              <li>• Você acompanha o pedido pelo código de rastreio.</li>
             </ul>
           </div>
         </Reveal>
       </div>
 
       <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
-        <Link to="/onde-comprar" className="btn-primary">Ver canais de compra</Link>
-        <a href={`https://wa.me/${settings.whatsapp}`} target="_blank" rel="noreferrer" className="btn-outline">Falar no WhatsApp</a>
+        <Link to="/velas" className="btn-primary">Comprar velas</Link>
+        <Link to="/contato" className="btn-outline">Falar com a Alkaia</Link>
       </div>
     </div>
   );

@@ -135,7 +135,7 @@ export interface StoreValue {
   addMessage: (m: Omit<ContactMessage, "id" | "createdAt">) => Promise<void>;
   deleteMessage: (id: string) => Promise<void>;
 
-  track: (event: string, meta?: { slug?: string; channel?: string; source?: string }) => void;
+  track: (event: string, meta?: { slug?: string; channel?: string; source?: string; qty?: number }) => void;
   refreshAdminData: () => Promise<void>;
 
   isAuthed: boolean;

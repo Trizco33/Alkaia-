@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useStore } from "../store/store";
-import { IconClose, IconInstagram, IconTikTok, IconWhatsApp, IconArrow, IconFlame } from "./ui";
+import { IconClose, IconInstagram, IconTikTok, IconArrow, IconFlame, IconBag } from "./ui";
+import { useCart } from "../store/cart";
 
 /* ---------------- SEO helper ---------------- */
 export function useSeo(title?: string, description?: string) {
@@ -24,6 +25,25 @@ const velasNav = [
   { label: "Velas Aromáticas", to: "/velas" },
   { label: "Velas de Massagem", to: "/velas-de-massagem" },
 ];
+
+/* ---------------- Carrinho (header) ---------------- */
+function CartButton() {
+  const { count } = useCart();
+  return (
+    <Link
+      to="/carrinho"
+      aria-label={`Carrinho de compras${count > 0 ? ` — ${count} ${count === 1 ? "item" : "itens"}` : ""}`}
+      className="relative flex h-11 w-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-linen"
+    >
+      <IconBag className="h-[22px] w-[22px]" />
+      {count > 0 && (
+        <span className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-terra px-1 text-[10px] font-semibold leading-none text-cream">
+          {count > 99 ? "99+" : count}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 function NavDropdown({ label, items }: { label: string; items: { label: string; to: string }[] }) {
   return (
@@ -127,7 +147,6 @@ function Header() {
     { label: "Velas", dropdown: velasNav },
     { label: "Kits e Presentes", to: "/kits" },
     { label: "Encomendas Especiais", to: "/encomendas" },
-    { label: "Onde Comprar", to: "/onde-comprar" },
     { label: "Entrega e Retirada", to: "/entrega" },
     { label: "Sobre a Alkaia", to: "/sobre" },
     { label: "FAQ", to: "/faq" },
@@ -179,11 +198,9 @@ function Header() {
             )}
           </nav>
 
-          {/* Right side: CTA + hamburger */}
-          <div className="flex items-center gap-3">
-            <Link to="/onde-comprar" className="btn-primary hidden !px-5 !py-2.5 lg:inline-flex">
-              Onde comprar
-            </Link>
+          {/* Right side: carrinho + hamburger */}
+          <div className="flex items-center gap-2">
+            <CartButton />
             <button
               onClick={() => setOpen((v) => !v)}
               className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors lg:hidden ${
@@ -262,11 +279,11 @@ function Header() {
 
             {/* CTA */}
             <Link
-              to="/onde-comprar"
+              to="/velas"
               onClick={() => setOpen(false)}
               className="btn-primary mt-6 w-full"
             >
-              Onde comprar
+              Comprar velas
             </Link>
 
             {/* Ritual discovery */}
@@ -299,15 +316,6 @@ function Header() {
               >
                 <IconTikTok className="h-5 w-5" />
               </a>
-              <a
-                href={`https://wa.me/${settings.whatsapp}`}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="WhatsApp"
-                className="flex h-10 w-10 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-linen hover:text-ink"
-              >
-                <IconWhatsApp className="h-5 w-5" />
-              </a>
             </div>
 
             {/* City */}
@@ -336,7 +344,6 @@ function Footer() {
       title: "A Alkaia",
       links: [
         { label: "Sobre a Alkaia", to: "/sobre" },
-        { label: "Onde Comprar", to: "/onde-comprar" },
         { label: "Entrega e Retirada", to: "/entrega" },
         { label: "Encomendas Especiais", to: "/encomendas" },
       ],
@@ -369,7 +376,6 @@ function Footer() {
             <div className="mt-6 flex items-center gap-4 text-ink-soft">
               <a href={settings.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="transition-colors hover:text-terra"><IconInstagram className="h-5 w-5" /></a>
               <a href={settings.tiktok} target="_blank" rel="noreferrer" aria-label="TikTok" className="transition-colors hover:text-terra"><IconTikTok className="h-5 w-5" /></a>
-              <a href={`https://wa.me/${settings.whatsapp}`} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="transition-colors hover:text-terra"><IconWhatsApp className="h-5 w-5" /></a>
             </div>
             <p className="mt-6 text-[13px] text-ink-soft">{settings.city}</p>
           </div>

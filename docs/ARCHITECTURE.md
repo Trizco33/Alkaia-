@@ -33,7 +33,7 @@ vercel.json / netlify.toml  # Headers de segurança + roteamento
 - **Com Supabase** (`VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` definidos): catálogo, pedidos especiais, mensagens de contato e analytics vão ao Postgres. Auth do admin via Supabase Auth (e-mail/senha).
 - **Sem Supabase**: o site funciona 100% em modo leitura com `seed.ts`. O painel admin **não** aceita login (o fallback com senha fixa foi removido — decisão de segurança).
 
-Tabelas (todas com RLS habilitado): `products`, `collections`, `settings`, `special_orders`, `contact_messages`, `analytics_events`.
+Tabelas (todas com RLS habilitado): `products`, `collections`, `settings`, `special_orders`, `contact_messages`, `analytics_events`, `orders`.
 
 ## 4. Build single-file
 
@@ -56,4 +56,36 @@ Nunca colocar `service_role` key no frontend.
 
 1. Commit na `main` → Vercel builda (`npm run build`) e publica.
 2. Headers de segurança aplicados pelo `vercel.json`.
-3. Verificação pós-deploy: abrir o site, testar navegação, catálogo, formulário de contato e login admin.
+3. Verificação pós-deploy: abrir o site, testar navegação, catálogo, carrinho/checkout, formulário de contato e login admin.
+
+## 7. E-commerce (Mercado Pago + SuperFrete)
+
+Fluxo de venda direto no site — sem Shopee/ML/compra por WhatsApp:
+
+```
+Carrinho (localStorage alkaia_cart_v1, src/store/cart.tsx)
+  → Checkout (src/pages/Shop.tsx): dados do cliente + ViaCEP + cotação de frete
+  → Edge Function create-order: revalida preço/estoque no DB, recota frete,
+    insere em `orders`, cria preference no Mercado Pago (Checkout Pro)
+  → Redirect para o Mercado Pago (initPoint)
+  → Webhook mp-webhook: consulta o pagamento no MP, atualiza status do pedido,
+    baixa estoque UMA vez (flag stock_debited) quando approved
+  → Volta ao site em /#/pedido/confirmacao?order=...
+```
+
+Edge Functions (Supabase, Deno):
+
+| Function | Papel | JWT |
+|---|---|---|
+| `shipping-quote` | Cota frete nos Correios via SuperFrete (PAC/SEDEX) | sim |
+| `create-order` | Valida pedido, insere em `orders`, cria preference MP | sim |
+| `mp-webhook` | Recebe notificações do MP, atualiza status + estoque | não (`verify_jwt = false`) |
+
+Secrets das functions (via `supabase secrets set`): `MP_ACCESS_TOKEN`, `SUPERFRETE_TOKEN`, `SITE_URL`, `FROM_CEP`.
+
+Princípios:
+- **Nunca confiar no browser**: preço, estoque e frete são revalidados no servidor antes de criar o pedido.
+- **Idempotência**: estoque só é debitado uma vez (`stock_debited`), e pedidos pagos nunca são rebaixados de status pelo webhook.
+- **Fallback**: sem as functions/secrets configuradas, o checkout mostra aviso de manutenção — o restante do site funciona normalmente.
+- Rotas novas: `/carrinho`, `/checkout`, `/pedido/confirmacao`; `/onde-comprar` redireciona para `/velas`.
+- Gestão de pedidos: aba **Vendas** no painel admin (status + código de rastreio).
