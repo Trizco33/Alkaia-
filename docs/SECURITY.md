@@ -28,21 +28,23 @@
 ### 1.3 Banco (Supabase)
 
 - **RLS habilitado em todas as tabelas.**
-- Catálogo (`products`, `collections`, `settings`): leitura pública, escrita só autenticado.
-- `special_orders`, `contact_messages`, `analytics_events`: visitante só consegue **inserir** (insert-only); leitura/gestão só autenticado.
+- Catálogo (`products`, `collections`, `settings`): leitura pública, escrita **somente admin** (via `is_admin()`).
+- `special_orders`, `contact_messages`, `analytics_events`: visitante só consegue **inserir** (insert-only); leitura/gestão somente admin.
+- **Cadastro público de usuários desligado** (`disable_signup: true`) — ninguém consegue criar conta nova.
+- Tabela `public.admin_users` + função `public.is_admin()` (security definer) controlam quem é admin; 9 políticas de escrita/gestão usam `is_admin()`. Única admin cadastrada: conta da proprietária.
 
 ---
 
-## 2. ⚠️ Pendência CRÍTICA — exige ação no painel do Supabase
+## 2. Pendência crítica — ✅ RESOLVIDA (2026-09)
 
-**Problema:** o cadastro público de usuários está **ligado** e as políticas de escrita valem para *qualquer usuário autenticado*. Ou seja: hoje, qualquer pessoa pode criar uma conta e ganhar poderes de admin (editar produtos, ler mensagens de clientes).
+Havia uma falha grave: o cadastro público estava ligado e as políticas de escrita aceitavam *qualquer usuário autenticado* — qualquer pessoa podia se cadastrar e virar admin.
 
-O token de acesso disponível é somente-leitura, então a correção precisa ser feita manualmente (≈ 2 minutos):
+**Correção aplicada em 2026-09 (verificada via Management API):**
 
-1. **Desligar cadastro público:** painel Supabase → *Authentication* → *Sign In / Providers* → *Email* → desativar **"Allow new users to sign up"**.
-2. **Restringir escrita à admin real:** painel Supabase → *SQL Editor* → colar e executar o conteúdo de **`supabase/security-upgrade.sql`** (cria a tabela `admin_users`, a função `is_admin()` e refaz as políticas de escrita para aceitar apenas a conta admin cadastrada).
+1. ✅ "Allow new users to sign up" desativado no painel (Authentication → Sign In / Providers → Email).
+2. ✅ `supabase/security-upgrade.sql` executado no SQL Editor: criou `admin_users`, `is_admin()` e refez as 9 políticas de escrita restringindo à admin real.
 
-Enquanto isso não for feito, a falha continua em produção.
+Se um dia for preciso adicionar outro admin: inserir o `user_id` dele em `public.admin_users` via SQL Editor (a tabela não tem políticas — só o painel/SQL Editor consegue escrever nela).
 
 ---
 
@@ -56,4 +58,5 @@ Enquanto isso não for feito, a falha continua em produção.
 
 ## 4. Histórico
 
-- **2026-09** — Auditoria completa: headers adicionados, credenciais removidas do código, script `security-upgrade.sql` criado, falha de signup aberto identificada (pendente de ação manual, ver seção 2).
+- **2026-09** — Auditoria completa: headers adicionados, credenciais removidas do código, script `security-upgrade.sql` criado, falha de signup aberto identificada.
+- **2026-09** — Falha crítica corrigida: signup público desligado e políticas de escrita restritas via `is_admin()` (script executado no painel). Verificado via Management API: `disable_signup: true`, tabela/função criadas, 9 políticas ativas, 1 admin cadastrada.
