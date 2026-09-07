@@ -161,6 +161,7 @@ export function ProductCard({ product, aspect = "aspect-[4/5]" }: { product: Pro
   const { collectionById } = useStore();
   const col = collectionById(product.collectionId);
   const onSale = product.salePrice && product.salePrice > 0 && product.salePrice < product.price;
+  const out = product.stock <= 0;
   return (
     <Link
       to={`/produto/${product.slug}`}
@@ -171,14 +172,26 @@ export function ProductCard({ product, aspect = "aspect-[4/5]" }: { product: Pro
           src={product.images[0]}
           alt={product.name}
           loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+          className={`h-full w-full object-cover transition-transform duration-[1.2s] ease-out [@media(hover:hover)]:group-hover:scale-105 ${out ? "opacity-75 saturate-[0.6]" : ""}`}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        {onSale && (
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/15 to-transparent opacity-0 transition-opacity duration-500 [@media(hover:hover)]:group-hover:opacity-100" />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-5 hidden justify-center opacity-0 translate-y-3 transition-all duration-500 ease-out [@media(hover:hover)]:flex [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:translate-y-0"
+        >
+          <span className="bg-cream/95 px-5 py-2.5 text-[11px] font-medium tracking-[0.18em] uppercase text-ink shadow-sm">
+            Conhecer produto
+          </span>
+        </span>
+        {out ? (
+          <span className="absolute left-3 top-3 bg-ink/75 px-3 py-1 text-[10px] font-medium tracking-widest uppercase text-cream backdrop-blur">
+            Esgotado
+          </span>
+        ) : onSale ? (
           <span className="absolute left-3 top-3 bg-cream/90 px-3 py-1 text-[10px] font-medium tracking-widest uppercase text-terra-dark">
             Oferta
           </span>
-        )}
+        ) : null}
         {product.featured && (
           <span className="absolute right-3 top-3 rounded-full bg-ink/80 px-3 py-1 text-[10px] tracking-widest uppercase text-cream backdrop-blur">
             Destaque

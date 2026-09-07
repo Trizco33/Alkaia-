@@ -10,7 +10,7 @@
 | Header | Valor | Por quê |
 |---|---|---|
 | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` | Força HTTPS sempre |
-| `Content-Security-Policy` | `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://viacep.com.br` (+ restrições de script/style/img/font — valor completo em `vercel.json`) | Limita de onde scripts, imagens e conexões podem vir. `viacep.com.br` entrou para o preenchimento de endereço no checkout |
+| `Content-Security-Policy` | `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://viacep.com.br` (+ restrições de script/style/img/font/media — valor completo em `vercel.json`) | Limita de onde scripts, imagens, vídeos e conexões podem vir. `viacep.com.br` entrou para o preenchimento de endereço no checkout; `media-src 'self' https://videos.pexels.com` entrou para o vídeo de fundo do hero da Home (2026-09) |
 | `X-Content-Type-Options` | `nosniff` | Impede sniffing de MIME |
 | `X-Frame-Options` | `DENY` | Impede o site de ser embutido em iframe (clickjacking) |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | Não vaza URLs completas |

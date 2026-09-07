@@ -80,7 +80,9 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
-    .reveal-hidden { opacity: 1; transform: none; }
+    .reveal-hidden { opacity: 1; transform: none; filter: none; }
+    .reveal-hidden .reveal-img { transform: none; }
+    .animate-ken-burns { animation: none; }
   }
 }
 
@@ -132,12 +134,26 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
-.reveal-hidden { opacity: 0; transform: translateY(24px); }
+.reveal-hidden { opacity: 0; transform: translateY(24px); filter: blur(6px); }
 .reveal-shown {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity var(--duration-long) var(--ease-alkaia), transform var(--duration-long) var(--ease-alkaia);
+  filter: blur(0);
+  transition:
+    opacity var(--duration-long) var(--ease-alkaia),
+    transform var(--duration-long) var(--ease-alkaia),
+    filter var(--duration-long) var(--ease-alkaia);
 }
+/* Variante para blocos de imagem: entra com leve scale além do blur */
+.reveal-hidden .reveal-img,
+.reveal-shown .reveal-img { transition: transform var(--duration-long) var(--ease-alkaia); }
+.reveal-hidden .reveal-img { transform: scale(1.04); }
+.reveal-shown .reveal-img { transform: scale(1); }
+@keyframes kenBurns {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+.animate-ken-burns { animation: kenBurns 22s var(--ease-alkaia) both; }
 .animate-fade-up { animation: fadeUp 0.8s var(--ease-alkaia) both; }
 .animate-fade-in { animation: fadeIn 0.8s ease both; }
 .animate-flicker { animation: flicker 2.6s ease-in-out infinite; }
