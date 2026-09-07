@@ -89,3 +89,13 @@ Princípios:
 - **Fallback**: sem as functions/secrets configuradas, o checkout mostra aviso de manutenção — o restante do site funciona normalmente.
 - Rotas novas: `/carrinho`, `/checkout`, `/pedido/confirmacao`; `/onde-comprar` redireciona para `/velas`.
 - Gestão de pedidos: aba **Vendas** no painel admin (status + código de rastreio).
+
+## 8. CMS — textos e fotos editáveis (aba "Site" no admin)
+
+- Tabela `public.site_content` (linha única `id=1`, coluna `data` jsonb): guarda **apenas o diff** em relação aos padrões — melhorias futuras nos textos padrão propagam a menos que a cliente tenha editado o campo.
+- `src/data/content.ts`: `contentDefaults` (mapa plano chave→string com todos os textos/imagens), `contentSchema` (grupos/labels PT para renderização genérica no admin), `mergeContent` (defaults + banco, só chaves conhecidas), `diffContent` (o que difere do default).
+- `src/store/store.tsx`: carrega `site_content` em `loadPublicData`, expõe `content` e `updateContent` no `StoreValue`; fallback localStorage no modo offline.
+- `src/lib/upload.ts`: redimensiona a foto no navegador (canvas → webp, máx 1920px, q 0.85) e envia ao bucket público `site-images` (limite 8MB, só mimes de imagem).
+- Admin (`src/pages/admin/Admin.tsx`): aba **Site** renderiza `contentSchema` genericamente (input/textarea/`ImageField`); `ImageField` (preview + "Enviar foto" + campo URL) também usado em Produtos (append de linha) e Coleções. `extractImageUrl` aceita HTML colado (ex.: embed do ibb.co) e extrai só a URL.
+- Páginas ligadas ao content: `Layout` (faixa do topo), `Home`, `Sobre`, `VelasAromaticas`, `Massagem`, `Kits`. FAQ, footer e menu ficam fixos (segurança de rotas).
+- SQL idempotente em `supabase/site_content.sql` (já executado).

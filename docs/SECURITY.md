@@ -63,3 +63,9 @@ Se um dia for preciso adicionar outro admin: inserir o `user_id` dele em `public
 
 - **2026-09** — Auditoria completa: headers adicionados, credenciais removidas do código, script `security-upgrade.sql` criado, falha de signup aberto identificada.
 - **2026-09** — Falha crítica corrigida: signup público desligado e políticas de escrita restritas via `is_admin()` (script executado no painel). Verificado via Management API: `disable_signup: true`, tabela/função criadas, 9 políticas ativas, 1 admin cadastrada.
+
+## 5. CMS (site_content + storage)
+
+- `site_content`: RLS — select público; insert/update só `is_admin()`. Verificado: PATCH/INSERT com anon key retornam 0 linhas/42501.
+- Bucket `site-images`: público para leitura; insert/update/delete em `storage.objects` só `is_admin()`; limite 8MB e apenas mimes de imagem. Verificado: upload anon (image/png) → 403 AccessDenied.
+- **2026-09-07** — CMS adicionado e testado: escrita anônima bloqueada em tabela e bucket; leitura pública ok.

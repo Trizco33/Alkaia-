@@ -59,3 +59,10 @@
 - [ ] Site abre na URL de produção; navegação entre rotas ok (HashRouter).
 - [ ] Imagens externas (Pexels) carregam.
 - [ ] Teste real em um celular físico, se possível.
+
+## 7. CMS (aba "Site")
+
+- [ ] Páginas públicas idênticas aos padrões quando `site_content.data = {}`.
+- [ ] Editar um texto na aba Site → salvar → aparece no site após recarregar.
+- [ ] "Enviar foto" funciona (webp no bucket `site-images`, preview atualiza).
+- [ ] Anon não consegue escrever em `site_content` nem no bucket (curl com anon key).

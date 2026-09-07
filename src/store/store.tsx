@@ -14,6 +14,7 @@ import {
   seedSettings,
   seedDeliveryRegions,
 } from "../data/seed";
+import { contentDefaults, mergeContent, diffContent } from "../data/content";
 import type {
   Product,
   Collection,
@@ -56,6 +57,7 @@ interface DB {
   collections: Collection[];
   categories: Category[];
   settings: Settings;
+  content: Record<string, string>;
   deliveryRegions: DeliveryRegion[];
   orders: SpecialOrder[];
   messages: ContactMessage[];
@@ -72,6 +74,7 @@ function seedDB(): DB {
     collections: seedCollections,
     categories: seedCategories,
     settings: seedSettings,
+    content: { ...contentDefaults },
     deliveryRegions: seedDeliveryRegions,
     orders: [],
     messages: [],
@@ -89,6 +92,7 @@ function loadLocalDB(): DB {
       ...parsed,
       analytics: { ...emptyAnalytics(), ...(parsed.analytics || {}) },
       settings: { ...seedSettings, ...(parsed.settings || {}) },
+      content: mergeContent(parsed.content),
     };
   } catch {
     return seedDB();
@@ -126,6 +130,8 @@ export interface StoreValue {
   saveCategory: (c: Category) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
   updateSettings: (s: Partial<Settings>) => Promise<void>;
+  content: Record<string, string>;
+  updateContent: (patch: Record<string, string>) => Promise<void>;
   saveDeliveryRegion: (r: DeliveryRegion) => Promise<void>;
   deleteDeliveryRegion: (id: string) => Promise<void>;
 
@@ -172,12 +178,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const loadPublicData = useCallback(async () => {
     if (!supabase) return;
     try {
-      const [cols, cats, prods, regions, sets] = await Promise.all([
+      const [cols, cats, prods, regions, sets, cont] = await Promise.all([
         supabase.from("collections").select("*").order("sort_order", { ascending: true }),
         supabase.from("categories").select("*"),
         supabase.from("products").select("*").order("created_at", { ascending: false }),
         supabase.from("delivery_regions").select("*"),
         supabase.from("settings").select("*").eq("id", 1).maybeSingle(),
+        supabase.from("site_content").select("data").eq("id", 1).maybeSingle(),
       ]);
 
       const firstError = cols.error || cats.error || prods.error || regions.error;
@@ -190,6 +197,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         products: (prods.data || []).map(rowToProduct),
         deliveryRegions: (regions.data || []).map(rowToRegion),
         settings: sets.data ? rowToSettings(sets.data, seedSettings) : prev.settings,
+        content: mergeContent(cont.data?.data),
       }));
       setError(null);
     } catch (e: any) {
@@ -443,6 +451,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setDb((prev) => ({ ...prev, settings: next }));
     };
 
+    /* ---- Conteúdo do site (textos e imagens) ---- */
+    const updateContent = async (patch: Record<string, string>) => {
+      const next = mergeContent({ ...db.content, ...patch });
+      if (supabase) {
+        const { error } = await supabase
+          .from("site_content")
+          .upsert({ id: 1, data: diffContent(next), updated_at: new Date().toISOString() });
+        if (error) throw new Error(error.message);
+      }
+      setDb((prev) => ({ ...prev, content: next }));
+    };
+
     /* ---- Regiões ---- */
     const saveDeliveryRegion = async (r: DeliveryRegion) => {
       if (supabase) {
@@ -557,6 +577,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       collections: db.collections,
       categories: db.categories,
       settings: db.settings,
+      content: db.content,
       deliveryRegions: db.deliveryRegions,
       orders: db.orders,
       messages: db.messages,
@@ -571,6 +592,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       saveCategory,
       deleteCategory,
       updateSettings,
+      updateContent,
       saveDeliveryRegion,
       deleteDeliveryRegion,
       addOrder,

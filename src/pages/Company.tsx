@@ -3,11 +3,10 @@ import { Link } from "react-router-dom";
 import { useStore } from "../store/store";
 import { useSeo } from "../components/Layout";
 import { Reveal, SectionHeader, IconPackage, IconMapPin, IconLeaf, IconFlame, IconSparkle, IconCheck } from "../components/ui";
-import { IMAGES } from "../data/seed";
 
 /* ============ SOBRE ============ */
 export function Sobre() {
-  const { track } = useStore();
+  const { track, content } = useStore();
   useSeo("Sobre a Alkaia", "A Alkaia nasce para acompanhar pequenos momentos. Velas artesanais, aromas e rituais de autocuidado.");
 
   useEffect(() => {
@@ -16,28 +15,28 @@ export function Sobre() {
   }, []);
 
   const pillars = [
-    { t: "Origem", d: "A Alkaia nasceu de um desejo simples: transformar o ato de acender uma vela em uma pausa real, que devolve a gente para si.", ic: <IconFlame className="h-6 w-6" /> },
-    { t: "Processo artesanal", d: "Cada vela é criada em pequenos lotes, com cera vegetal e óleos essenciais escolhidos com calma — sem pressa, como um bom ritual.", ic: <IconLeaf className="h-6 w-6" /> },
-    { t: "Criação das coleções", d: "Cada coleção nasce de uma atmosfera ou de uma emoção. Do floral ao amadeirado, os aromas são desenhados para contar uma história.", ic: <IconSparkle className="h-6 w-6" /> },
-    { t: "Cuidado com os detalhes", d: "Da cera ao pavio, do rótulo à embalagem, tudo é pensado para tornar o seu momento mais bonito, delicado e especial.", ic: <IconCheck className="h-6 w-6" /> },
+    { t: content["sobre.pillar1.title"], d: content["sobre.pillar1.text"], ic: <IconFlame className="h-6 w-6" /> },
+    { t: content["sobre.pillar2.title"], d: content["sobre.pillar2.text"], ic: <IconLeaf className="h-6 w-6" /> },
+    { t: content["sobre.pillar3.title"], d: content["sobre.pillar3.text"], ic: <IconSparkle className="h-6 w-6" /> },
+    { t: content["sobre.pillar4.title"], d: content["sobre.pillar4.text"], ic: <IconCheck className="h-6 w-6" /> },
   ];
 
   return (
     <div>
       <section className="relative overflow-hidden">
-        <img src={IMAGES.linen2} alt="Atmosfera Alkaia" loading="eager" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={content["sobre.hero.image"]} alt="Atmosfera Alkaia" loading="eager" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/45 to-ink/25" />
         <div className="shell relative z-10 py-28 sm:py-40">
-          <p className="eyebrow text-clay animate-fade-up">Sobre a Alkaia</p>
+          <p className="eyebrow text-clay animate-fade-up">{content["sobre.hero.eyebrow"]}</p>
           <h1 className="mt-3 max-w-2xl font-serif text-5xl leading-tight text-cream sm:text-6xl animate-fade-up" style={{ animationDelay: "120ms" }}>
-            Pequenos momentos. Grandes significados.
+            {content["sobre.hero.title"]}
           </h1>
           <div className="mt-7 max-w-lg space-y-1 text-[15px] leading-relaxed text-cream/85 animate-fade-up" style={{ animationDelay: "240ms" }}>
-            <p className="font-serif text-lg italic text-cream/90">Acreditamos que pequenos momentos podem carregar grandes significados.</p>
-            <p>Uma luz acesa.</p>
-            <p>Um aroma no ambiente.</p>
-            <p>Alguns minutos de pausa.</p>
-            <p className="mt-2">A Alkaia nasce para acompanhar esses momentos.</p>
+            <p className="font-serif text-lg italic text-cream/90">{content["sobre.hero.lead"]}</p>
+            {content["sobre.hero.lines"].split("\n").filter((l) => l.trim()).map((l, i) => (
+              <p key={i}>{l}</p>
+            ))}
+            <p className="mt-2">{content["sobre.hero.closing"]}</p>
           </div>
         </div>
       </section>
@@ -45,21 +44,19 @@ export function Sobre() {
       <section className="shell py-20 sm:py-28">
         <div className="grid items-start gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-20">
           <Reveal>
-            <p className="eyebrow text-terra">Nossa essência</p>
-            <h2 className="mt-3 text-4xl leading-tight text-ink sm:text-5xl text-balance">Uma marca para estar presente.</h2>
+            <p className="eyebrow text-terra">{content["sobre.essence.eyebrow"]}</p>
+            <h2 className="mt-3 text-4xl leading-tight text-ink sm:text-5xl text-balance">{content["sobre.essence.title"]}</h2>
             <p className="mt-6 text-[15px] leading-relaxed text-ink-soft text-pretty">
-              Não fazemos apenas velas. Criamos atmosferas, memórias e pequenos rituais de cuidado. A Alkaia é
-              feita à mão, com intenção, para acompanhar os seus momentos de pausa — seja no fim do dia, num
-              banho demorado, numa massagem ou naquela noite especial.
+              {content["sobre.essence.p1"]}
             </p>
             <p className="mt-4 text-[15px] leading-relaxed text-ink-soft text-pretty">
-              Cada coleção é um universo. Cada aroma, uma sensação. E cada chama, um convite para respirar.
+              {content["sobre.essence.p2"]}
             </p>
           </Reveal>
           <Reveal delay={120}>
             <div className="grid grid-cols-2 gap-4">
-              <img src={IMAGES.make2} alt="Processo artesanal" loading="lazy" className="aspect-[3/4] rounded-[2px] object-cover" />
-              <img src={IMAGES.dried} alt="Flores secas" loading="lazy" className="mt-8 aspect-[3/4] rounded-[2px] object-cover" />
+              <img src={content["sobre.essence.image1"]} alt="Processo artesanal" loading="lazy" className="aspect-[3/4] rounded-[2px] object-cover" />
+              <img src={content["sobre.essence.image2"]} alt="Flores secas" loading="lazy" className="mt-8 aspect-[3/4] rounded-[2px] object-cover" />
             </div>
           </Reveal>
         </div>
@@ -68,7 +65,7 @@ export function Sobre() {
       <section className="bg-cream-2 py-20 sm:py-28">
         <div className="shell">
           <Reveal>
-            <SectionHeader eyebrow="O que nos move" title="Cuidado em cada detalhe" text="Quatro pilares sustentam tudo o que criamos." />
+            <SectionHeader eyebrow={content["sobre.pillars.eyebrow"]} title={content["sobre.pillars.title"]} text={content["sobre.pillars.text"]} />
           </Reveal>
           <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {pillars.map((p, i) => (
@@ -84,19 +81,19 @@ export function Sobre() {
 
           <div className="mt-16 grid gap-6 lg:grid-cols-[1fr_1fr]">
             <div className="relative overflow-hidden rounded-[2px]">
-              <img src={IMAGES.make1} alt="Derramando a cera" loading="lazy" className="aspect-[16/10] w-full object-cover" />
+              <img src={content["sobre.card1.image"]} alt="Derramando a cera" loading="lazy" className="aspect-[16/10] w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-ink/70 to-transparent" />
               <div className="absolute bottom-0 p-6">
-                <h3 className="font-serif text-2xl text-cream">Feito à mão, com intenção.</h3>
-                <p className="mt-1 text-[13px] text-cream/80">Cada lote é produzido artesanalmente.</p>
+                <h3 className="font-serif text-2xl text-cream">{content["sobre.card1.title"]}</h3>
+                <p className="mt-1 text-[13px] text-cream/80">{content["sobre.card1.text"]}</p>
               </div>
             </div>
             <div className="relative overflow-hidden rounded-[2px]">
-              <img src={IMAGES.spa3} alt="Ritual de autocuidado" loading="lazy" className="aspect-[16/10] w-full object-cover" />
+              <img src={content["sobre.card2.image"]} alt="Ritual de autocuidado" loading="lazy" className="aspect-[16/10] w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-ink/70 to-transparent" />
               <div className="absolute bottom-0 p-6">
-                <h3 className="font-serif text-2xl text-cream">Rituais de autocuidado.</h3>
-                <p className="mt-1 text-[13px] text-cream/80">Para perfumar, cuidar e transformar momentos.</p>
+                <h3 className="font-serif text-2xl text-cream">{content["sobre.card2.title"]}</h3>
+                <p className="mt-1 text-[13px] text-cream/80">{content["sobre.card2.text"]}</p>
               </div>
             </div>
           </div>

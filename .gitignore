@@ -5,3 +5,4 @@ dist/
 task.md
 *.log
 .DS_Store
+supabase/.temp/

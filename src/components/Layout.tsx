@@ -126,7 +126,7 @@ function Hamburger({ open }: { open: boolean }) {
 }
 
 function Header() {
-  const { settings } = useStore();
+  const { settings, content } = useStore();
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
@@ -159,7 +159,7 @@ function Header() {
       <div className="bg-ink text-cream">
         <div className="shell flex items-center justify-center gap-2 py-2 text-center text-[11px] tracking-[0.18em] uppercase">
           <IconFlame className="h-3.5 w-3.5 text-clay" />
-          <span>Velas artesanais · {settings.city}</span>
+          <span>{content["band.text"]}</span>
         </div>
       </div>
 

@@ -3,11 +3,10 @@ import { Link } from "react-router-dom";
 import { useStore } from "../store/store";
 import { useSeo } from "../components/Layout";
 import { Reveal, SectionHeader, ProductCard, IconArrow, IconFlame, IconDrop, IconCheck } from "../components/ui";
-import { IMAGES } from "../data/seed";
 
 /* ============ VELAS AROMÁTICAS ============ */
 export function VelasAromaticas() {
-  const { products, collections, track } = useStore();
+  const { products, collections, content, track } = useStore();
   useSeo("Velas Aromáticas", "Velas aromáticas artesanais Alkaia para perfumar ambientes e despertar sentidos.");
   const items = products.filter((p) => p.status === "active" && p.categoryId === "cat-aromaticas");
   const colIds = [...new Set(items.map((p) => p.collectionId))];
@@ -21,9 +20,9 @@ export function VelasAromaticas() {
     <div className="shell py-16 sm:py-24">
       <Reveal>
         <SectionHeader
-          eyebrow="Velas Aromáticas"
-          title="Aroma que transforma o ambiente"
-          text="Velas feitas à mão, com cera vegetal e óleos essenciais, para perfumar espaços e criar atmosferas memoráveis."
+          eyebrow={content["velas.header.eyebrow"]}
+          title={content["velas.header.title"]}
+          text={content["velas.header.text"]}
         />
       </Reveal>
 
@@ -46,20 +45,20 @@ export function VelasAromaticas() {
 
       <div className="mt-20 grid gap-6 lg:grid-cols-[1fr_1fr]">
         <Link to="/velas-de-massagem" className="group relative overflow-hidden rounded-[2px]">
-          <img src={IMAGES.spa1} alt="Velas de massagem" loading="lazy" className="aspect-[16/10] w-full object-cover" />
+          <img src={content["velas.card1.image"]} alt="Velas de massagem" loading="lazy" className="aspect-[16/10] w-full object-cover" />
           <div className="absolute inset-0 bg-ink/45 transition-colors group-hover:bg-ink/55" />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-            <h3 className="font-serif text-3xl text-cream">Velas de Massagem</h3>
-            <p className="mt-2 text-[13px] text-cream/80">Rituais de cuidado para o corpo.</p>
+            <h3 className="font-serif text-3xl text-cream">{content["velas.card1.title"]}</h3>
+            <p className="mt-2 text-[13px] text-cream/80">{content["velas.card1.text"]}</p>
             <span className="mt-5 inline-flex items-center gap-2 text-[13px] font-medium text-cream">Ver linha <IconArrow className="h-4 w-4" /></span>
           </div>
         </Link>
         <Link to="/kits" className="group relative overflow-hidden rounded-[2px]">
-          <img src={IMAGES.linen3} alt="Kits e presentes" loading="lazy" className="aspect-[16/10] w-full object-cover" />
+          <img src={content["velas.card2.image"]} alt="Kits e presentes" loading="lazy" className="aspect-[16/10] w-full object-cover" />
           <div className="absolute inset-0 bg-ink/45 transition-colors group-hover:bg-ink/55" />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-            <h3 className="font-serif text-3xl text-cream">Kits e Presentes</h3>
-            <p className="mt-2 text-[13px] text-cream/80">Para embalar um gesto de carinho.</p>
+            <h3 className="font-serif text-3xl text-cream">{content["velas.card2.title"]}</h3>
+            <p className="mt-2 text-[13px] text-cream/80">{content["velas.card2.text"]}</p>
             <span className="mt-5 inline-flex items-center gap-2 text-[13px] font-medium text-cream">Conhecer <IconArrow className="h-4 w-4" /></span>
           </div>
         </Link>
@@ -70,7 +69,7 @@ export function VelasAromaticas() {
 
 /* ============ VELAS DE MASSAGEM ============ */
 export function Massagem() {
-  const { products, track, formatPrice } = useStore();
+  const { products, content, track, formatPrice } = useStore();
   useSeo("Velas de Massagem", "Velas de massagem artesanais Alkaia — derretem em óleo morno para rituais de autocuidado e spa.");
   const items = products.filter((p) => p.status === "active" && p.categoryId === "cat-massagem");
   const ritPes = products.find((p) => p.slug === "ritual-dos-pes") || items[0];
@@ -83,15 +82,15 @@ export function Massagem() {
   return (
     <div>
       <section className="relative overflow-hidden">
-        <img src={IMAGES.spa2} alt="Ritual spa Alkaia" loading="eager" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={content["massagem.hero.image"]} alt="Ritual spa Alkaia" loading="eager" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/40 to-ink/20" />
         <div className="shell relative z-10 py-28 sm:py-40">
-          <p className="eyebrow text-clay animate-fade-up">Spa · Autocuidado · Ritual</p>
+          <p className="eyebrow text-clay animate-fade-up">{content["massagem.hero.eyebrow"]}</p>
           <h1 className="mt-3 max-w-xl font-serif text-5xl leading-tight text-cream sm:text-6xl animate-fade-up" style={{ animationDelay: "120ms" }}>
-            O cuidado em forma de ritual.
+            {content["massagem.hero.title"]}
           </h1>
           <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-cream/85 animate-fade-up" style={{ animationDelay: "240ms" }}>
-            Velas de massagem que derretem em um óleo morno e perfumado, transformando o simples gesto do cuidado em uma experiência sensorial para o corpo e para a mente.
+            {content["massagem.hero.text"]}
           </p>
         </div>
       </section>
@@ -100,18 +99,18 @@ export function Massagem() {
       <section className="shell py-16 sm:py-24">
         <Reveal>
           <SectionHeader
-            eyebrow="Como funciona"
-            title="Do fogo ao toque"
-            text="Uma pequena pausa basta para transformar a vela em um óleo de massagem morno e perfumado."
+            eyebrow={content["massagem.how.eyebrow"]}
+            title={content["massagem.how.title"]}
+            text={content["massagem.how.text"]}
           />
         </Reveal>
         <div className="mt-12 grid gap-4 sm:grid-cols-3">
           {[
-            { t: "Acenda", d: "Acenda a vela por alguns minutos até derreter uma camada de óleo na superfície.", ic: <IconFlame className="h-6 w-6" /> },
-            { t: "Apague e amorne", d: "Apague a chama e aguarde a temperatura ficar confortável para a pele.", ic: <IconDrop className="h-6 w-6" /> },
-            { t: "Massageie", d: "Aplique o óleo morno com movimentos suaves e deixe o aroma cuidar de você.", ic: <IconCheck className="h-6 w-6" /> },
+            { t: content["massagem.step1.title"], d: content["massagem.step1.text"], ic: <IconFlame className="h-6 w-6" /> },
+            { t: content["massagem.step2.title"], d: content["massagem.step2.text"], ic: <IconDrop className="h-6 w-6" /> },
+            { t: content["massagem.step3.title"], d: content["massagem.step3.text"], ic: <IconCheck className="h-6 w-6" /> },
           ].map((s, i) => (
-            <Reveal key={s.t} delay={i * 100}>
+            <Reveal key={i} delay={i * 100}>
               <div className="rounded-[2px] border border-ink/10 bg-ghost p-7 text-center">
                 <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-linen text-terra">{s.ic}</span>
                 <p className="mt-5 eyebrow text-[10px] text-terra">Passo {i + 1}</p>
@@ -129,7 +128,7 @@ export function Massagem() {
           <div className="shell grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <Reveal className="relative">
               <div className="aspect-[4/5] overflow-hidden rounded-[2px]">
-                <img src={IMAGES.spa1} alt="Ritual dos Pés" loading="lazy" className="h-full w-full object-cover" />
+                <img src={content["massagem.flagship.image"]} alt="Ritual dos Pés" loading="lazy" className="h-full w-full object-cover" />
               </div>
             </Reveal>
             <Reveal delay={120}>
@@ -179,7 +178,7 @@ export function Massagem() {
 
 /* ============ KITS E PRESENTES ============ */
 export function Kits() {
-  const { products, track } = useStore();
+  const { products, content, track } = useStore();
   useSeo("Kits e Presentes", "Kits e presentes Alkaia — composições autorais para presentear com aroma, luz e cuidado.");
   const gift = products.filter((p) => p.status === "active" && !p.categoryId?.includes("massagem")).slice(0, 4);
 
@@ -192,33 +191,32 @@ export function Kits() {
     <div className="shell py-16 sm:py-24">
       <Reveal>
         <SectionHeader
-          eyebrow="Kits e Presentes"
-          title="Um gelo de carinho, embalado com cuidado"
-          text="Montamos composições autorais para presentear — ou para se presentear — com aroma, luz e pausa."
+          eyebrow={content["kits.header.eyebrow"]}
+          title={content["kits.header.title"]}
+          text={content["kits.header.text"]}
         />
       </Reveal>
 
       <div className="mt-14 grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
         <Reveal className="relative">
           <div className="aspect-[4/5] overflow-hidden rounded-[2px]">
-            <img src={IMAGES.cand5} alt="Kit Alkaia" loading="lazy" className="h-full w-full object-cover" />
+            <img src={content["kits.body.image"]} alt="Kit Alkaia" loading="lazy" className="h-full w-full object-cover" />
           </div>
         </Reveal>
         <Reveal delay={120}>
-          <h2 className="text-3xl leading-tight text-ink sm:text-4xl text-balance">Presenteie um ritual.</h2>
+          <h2 className="text-3xl leading-tight text-ink sm:text-4xl text-balance">{content["kits.body.title"]}</h2>
           <p className="mt-5 text-[15px] leading-relaxed text-ink-soft text-pretty">
-            Kits para datas especiais, lembranças de eventos, brindes corporativos e para quem você quer bem.
-            Conte para a gente o momento e criamos a composição perfeita.
+            {content["kits.body.text"]}
           </p>
           <ul className="mt-7 space-y-3 text-[14px] text-ink">
-            {["Kits para datas comemorativas", "Lembranças e brindes de eventos", "Presentes corporativos", "Composições para spas e profissionais"].map((t) => (
-              <li key={t} className="flex items-center gap-3">
+            {[content["kits.body.bullet1"], content["kits.body.bullet2"], content["kits.body.bullet3"], content["kits.body.bullet4"]].map((t, i) => (
+              <li key={i} className="flex items-center gap-3">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-linen text-terra"><IconCheck className="h-3.5 w-3.5" /></span>
                 {t}
               </li>
             ))}
           </ul>
-          <Link to="/encomendas" className="btn-primary mt-9">Solicitar um kit</Link>
+          <Link to="/encomendas" className="btn-primary mt-9">{content["kits.body.btn"]}</Link>
         </Reveal>
       </div>
 

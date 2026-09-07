@@ -3,17 +3,100 @@ import { useStore } from "../../store/store";
 import { useSeo } from "../../components/Layout";
 import { IconFlame, IconClose, IconPlus, IconCheck } from "../../components/ui";
 import { supabase } from "../../lib/supabase";
+import { uploadImage } from "../../lib/upload";
+import { contentSchema, contentDefaults } from "../../data/content";
 import type { Product, Collection, DeliveryRegion } from "../../data/seed";
 
 const emptyRegion = (): Omit<DeliveryRegion, "id"> => ({ name: "", type: "entrega", note: "" });
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 
+/** Aceita URL simples ou código HTML colado (ex.: embed do ibb.co) e devolve só o endereço da imagem. */
+function extractImageUrl(line: string): string {
+  const s = line.trim();
+  if (!s) return "";
+  const imgSrc = s.match(/<img[^>]*\bsrc="([^"]+)"/i);
+  if (imgSrc) return imgSrc[1];
+  const anyUrl = s.match(/https?:\/\/[^\s"'<>]+/);
+  if (anyUrl) return anyUrl[0];
+  return s;
+}
+
 function fieldCls() {
   return "w-full rounded-[2px] border border-ink/15 bg-ghost px-3 py-2 text-[13px] text-ink outline-none focus:border-terra";
 }
 function Label({ children }: { children: React.ReactNode }) {
   return <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-soft">{children}</label>;
+}
+
+/* ---------------- Campo de imagem com upload ---------------- */
+function ImageField({
+  label,
+  value,
+  onChange,
+  showUrl = true,
+}: {
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+  showUrl?: boolean;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const inputId = useState(() => `img-${Math.random().toString(36).slice(2, 8)}`)[0];
+
+  const pick = async (file: File | null) => {
+    if (!file) return;
+    setBusy(true);
+    setErr("");
+    try {
+      const url = await uploadImage(file);
+      onChange(url);
+    } catch (e: any) {
+      setErr(e?.message || "Não foi possível enviar a foto.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div>
+      <Label>{label}</Label>
+      <div className="flex items-start gap-3">
+        {value ? (
+          <img src={value} alt="" className="h-16 w-16 shrink-0 rounded-[2px] border border-ink/10 object-cover" />
+        ) : (
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[2px] border border-dashed border-ink/20 text-[10px] text-ink-soft">sem foto</div>
+        )}
+        <div className="min-w-0 flex-1 space-y-2">
+          <div>
+            <input
+              id={inputId}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                pick(e.target.files?.[0] ?? null);
+                e.target.value = "";
+              }}
+            />
+            <label htmlFor={inputId} className={`btn-outline inline-flex cursor-pointer !px-4 !py-2 !text-[12px] ${busy ? "pointer-events-none opacity-60" : ""}`}>
+              {busy ? "Enviando..." : "Enviar foto"}
+            </label>
+          </div>
+          {showUrl && (
+            <input
+              className={fieldCls()}
+              value={value}
+              onChange={(e) => onChange(extractImageUrl(e.target.value))}
+              placeholder="ou cole o endereço (URL) da imagem"
+            />
+          )}
+          {err && <p className="text-[12px] text-terra-dark">{err}</p>}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ---------------- Login ---------------- */
@@ -194,7 +277,7 @@ function ProductEditor({ initial, onDone }: { initial: Product; onDone: () => vo
       await saveProduct({
         ...f,
         slug: f.slug.trim() ? slugify(f.slug) : slugify(f.name),
-        images: images.split("\n").map((s) => s.trim()).filter(Boolean),
+        images: images.split("\n").map((s) => extractImageUrl(s)).filter(Boolean),
         aromaticNotes: notes.split("\n").map((s) => s.trim()).filter(Boolean),
         salePrice: f.salePrice && f.salePrice > 0 ? f.salePrice : null,
         updatedAt: Date.now(),
@@ -232,7 +315,18 @@ function ProductEditor({ initial, onDone }: { initial: Product; onDone: () => vo
         </div>
         <div className="sm:col-span-2"><Label>Descrição curta</Label><textarea className={fieldCls()} rows={2} value={f.shortDescription} onChange={(e) => set({ shortDescription: e.target.value })} /></div>
         <div className="sm:col-span-2"><Label>Descrição completa</Label><textarea className={fieldCls()} rows={3} value={f.description} onChange={(e) => set({ description: e.target.value })} /></div>
-        <div className="sm:col-span-2"><Label>Imagens (um URL por linha)</Label><textarea className={fieldCls()} rows={3} value={images} onChange={(e) => setImages(e.target.value)} /></div>
+        <div className="sm:col-span-2">
+          <Label>Imagens (um URL por linha)</Label>
+          <textarea className={fieldCls()} rows={3} value={images} onChange={(e) => setImages(e.target.value)} />
+          <div className="mt-2">
+            <ImageField
+              label="Enviar foto do celular ou computador (será adicionada à lista acima)"
+              value=""
+              showUrl={false}
+              onChange={(url) => setImages((prev) => (prev.trim() ? `${prev.trimEnd()}\n${url}` : url))}
+            />
+          </div>
+        </div>
         <div><Label>Perfil olfativo</Label><input className={fieldCls()} value={f.olfactoryProfile} onChange={(e) => set({ olfactoryProfile: e.target.value })} /></div>
         <div><Label>Notas aromáticas (uma por linha)</Label><textarea className={fieldCls()} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
         <div><Label>Peso</Label><input className={fieldCls()} value={f.weight} onChange={(e) => set({ weight: e.target.value })} /></div>
@@ -345,7 +439,7 @@ function CollectionManager() {
           <div><Label>Nome</Label><input className={fieldCls()} value={f.name} onChange={(e) => set({ name: e.target.value })} /></div>
           <div><Label>Slug</Label><input className={fieldCls()} value={f.slug} onChange={(e) => set({ slug: e.target.value })} /></div>
           <div><Label>Tagline</Label><input className={fieldCls()} value={f.tagline} onChange={(e) => set({ tagline: e.target.value })} /></div>
-          <div><Label>Imagem (URL)</Label><input className={fieldCls()} value={f.image} onChange={(e) => set({ image: e.target.value })} /></div>
+          <div className="sm:col-span-2"><ImageField label="Imagem da coleção" value={f.image} onChange={(url) => set({ image: url })} /></div>
           <div className="sm:col-span-2"><Label>Descrição</Label><textarea className={fieldCls()} rows={2} value={f.description} onChange={(e) => set({ description: e.target.value })} /></div>
           <div className="sm:col-span-2"><Label>Editorial</Label><textarea className={fieldCls()} rows={3} value={f.editorial} onChange={(e) => set({ editorial: e.target.value })} /></div>
         </div>
@@ -767,8 +861,86 @@ function SettingsManager() {
   );
 }
 
+/* ---------------- Conteúdo do site ---------------- */
+function SiteContentManager() {
+  const { content, updateContent } = useStore();
+  const [draft, setDraft] = useState<Record<string, string>>(() => ({ ...content }));
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setDraft({ ...content });
+  }, [content]);
+
+  const set = (key: string, value: string) => {
+    setSaved(false);
+    setDraft((d) => ({ ...d, [key]: value }));
+  };
+
+  const dirty = Object.keys(contentDefaults).some((k) => (draft[k] ?? "") !== (content[k] ?? ""));
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      await updateContent(draft);
+      setSaved(true);
+    } catch (e: any) {
+      alert(e?.message || "Erro ao salvar. Tente novamente.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-serif text-2xl text-ink">Textos e fotos do site</h2>
+          <p className="mt-1 text-[13px] text-ink-soft">Edite abaixo e toque em <strong>Salvar alterações</strong>. As mudanças aparecem no site na hora.</p>
+        </div>
+        <button onClick={save} disabled={busy || !dirty} className="btn-primary !px-5 !py-2.5 !text-[13px] disabled:opacity-50">
+          {busy ? "Salvando..." : saved && !dirty ? <span className="inline-flex items-center gap-1.5"><IconCheck className="h-4 w-4" /> Salvo</span> : "Salvar alterações"}
+        </button>
+      </div>
+
+      {contentSchema.map((group) => (
+        <section key={group.title} className="rounded-[2px] border border-ink/10 bg-ghost p-5">
+          <h3 className="font-serif text-lg text-ink">{group.title}</h3>
+          {group.description && <p className="mt-1 text-[12px] text-ink-soft">{group.description}</p>}
+          <div className="mt-4 space-y-4">
+            {group.fields.map((f) => (
+              <div key={f.key}>
+                {f.kind === "image" ? (
+                  <ImageField label={f.label} value={draft[f.key] ?? ""} onChange={(url) => set(f.key, url)} />
+                ) : f.kind === "long" ? (
+                  <div>
+                    <Label>{f.label}</Label>
+                    <textarea className={fieldCls()} rows={3} value={draft[f.key] ?? ""} onChange={(e) => set(f.key, e.target.value)} />
+                  </div>
+                ) : (
+                  <div>
+                    <Label>{f.label}</Label>
+                    <input className={fieldCls()} value={draft[f.key] ?? ""} onChange={(e) => set(f.key, e.target.value)} />
+                  </div>
+                )}
+                {f.hint && <p className="mt-1 text-[11px] text-ink-soft">{f.hint}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      <div className="sticky bottom-4 flex justify-end">
+        <button onClick={save} disabled={busy || !dirty} className="btn-primary !px-5 !py-2.5 !text-[13px] shadow-lg disabled:opacity-50">
+          {busy ? "Salvando..." : "Salvar alterações"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ---------------- Shell ---------------- */
-const tabs = ["Dashboard", "Vendas", "Produtos", "Coleções", "Categorias", "Encomendas", "Mensagens", "Configurações"] as const;
+const tabs = ["Dashboard", "Vendas", "Site", "Produtos", "Coleções", "Categorias", "Encomendas", "Mensagens", "Configurações"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function Admin() {
@@ -831,6 +1003,7 @@ export default function Admin() {
         <div className="mt-8">
           {tab === "Dashboard" && <Dashboard />}
           {tab === "Vendas" && <SalesManager />}
+          {tab === "Site" && <SiteContentManager />}
           {tab === "Produtos" && <ProductManager />}
           {tab === "Coleções" && <CollectionManager />}
           {tab === "Categorias" && <CategoryManager />}
