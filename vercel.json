@@ -4,7 +4,10 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "cleanUrls": true,
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/sitemap.xml", "destination": "https://sgqskwduykvfphwmiigw.supabase.co/functions/v1/sitemap" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

@@ -1,4 +1,5 @@
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { StoreProvider } from "./store/store";
 import { CartProvider } from "./store/cart";
 import Layout, { ScrollToTop } from "./components/Layout";
@@ -10,13 +11,25 @@ import { Sobre, Entrega } from "./pages/Company";
 import { Encomendas, Faq, Contato } from "./pages/Help";
 import { Cart, Checkout, OrderConfirm } from "./pages/Shop";
 import Ritual from "./pages/Ritual";
+import { BlogList, BlogPostPage } from "./pages/Blog";
 import Admin from "./pages/admin/Admin";
+
+/** Compatibilidade: redireciona links antigos com # (ex.: /#/velas → /velas). */
+function HashRedirect() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const h = window.location.hash;
+    if (h.startsWith("#/")) navigate(h.slice(1), { replace: true });
+  }, [navigate]);
+  return null;
+}
 
 export default function App() {
   return (
     <StoreProvider>
       <CartProvider>
-        <HashRouter>
+        <BrowserRouter>
+          <HashRedirect />
           <ScrollToTop />
           <Routes>
             <Route element={<Layout />}>
@@ -37,10 +50,12 @@ export default function App() {
               <Route path="/faq" element={<Faq />} />
               <Route path="/contato" element={<Contato />} />
               <Route path="/ritual" element={<Ritual />} />
+              <Route path="/blog" element={<BlogList />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
             </Route>
             <Route path="/admin" element={<Admin />} />
           </Routes>
-        </HashRouter>
+        </BrowserRouter>
       </CartProvider>
     </StoreProvider>
   );

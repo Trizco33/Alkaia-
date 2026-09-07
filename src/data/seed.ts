@@ -81,6 +81,19 @@ export interface Category {
   description: string;
 }
 
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  coverUrl: string;
+  body: string;
+  published: boolean;
+  publishedAt: number | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface SpecialOrder {
   id: string;
   name: string;

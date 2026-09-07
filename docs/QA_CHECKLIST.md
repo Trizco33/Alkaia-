@@ -56,7 +56,10 @@
 
 ## 6. Pós-deploy
 
-- [ ] Site abre na URL de produção; navegação entre rotas ok (HashRouter).
+- [ ] Site abre na URL de produção; navegação entre rotas ok (BrowserRouter — URLs sem `#`).
+- [ ] Acesso direto a sub-rota (ex.: `https://SITE/velas`) responde 200 e renderiza (SPA fallback do Vercel).
+- [ ] Link antigo com `#` (ex.: `https://SITE/#/velas`) redireciona para a rota sem `#`.
+- [ ] `https://SITE/sitemap.xml` devolve o XML dinâmico (inclui `/blog` e posts publicados).
 - [ ] Imagens externas (Pexels) carregam.
 - [ ] Teste real em um celular físico, se possível.
 
@@ -66,3 +69,11 @@
 - [ ] Editar um texto na aba Site → salvar → aparece no site após recarregar.
 - [ ] "Enviar foto" funciona (webp no bucket `site-images`, preview atualiza).
 - [ ] Anon não consegue escrever em `site_content` nem no bucket (curl com anon key).
+
+## 8. Blog
+
+- [ ] `/blog` mostra "Em breve" sem posts; lista posts publicados.
+- [ ] Criar post na aba Blog do admin (título → slug automático, capa, resumo, corpo) → aparece em `/blog` e `/blog/:slug`.
+- [ ] `##` no corpo vira subtítulo; linha em branco separa parágrafos.
+- [ ] Rascunho não aparece para visitante (nem via API com anon key).
+- [ ] Post publicado entra no `sitemap.xml`; despublicado sai.

@@ -69,3 +69,8 @@ Se um dia for preciso adicionar outro admin: inserir o `user_id` dele em `public
 - `site_content`: RLS — select público; insert/update só `is_admin()`. Verificado: PATCH/INSERT com anon key retornam 0 linhas/42501.
 - Bucket `site-images`: público para leitura; insert/update/delete em `storage.objects` só `is_admin()`; limite 8MB e apenas mimes de imagem. Verificado: upload anon (image/png) → 403 AccessDenied.
 - **2026-09-07** — CMS adicionado e testado: escrita anônima bloqueada em tabela e bucket; leitura pública ok.
+
+## 6. Blog (blog_posts)
+
+- `blog_posts`: RLS — select `published OR is_admin()` (anon só vê publicados; rascunhos exigem admin logado); insert/update/delete só `is_admin()`.
+- **2026-09-07** — Verificado com anon key: INSERT → 401; UPDATE → 0 linhas; SELECT com rascunho no banco → `[]`. E2E: post publicado aparece em `/blog`, `/blog/:slug` e no sitemap dinâmico; post de teste removido ao final.

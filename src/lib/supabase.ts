@@ -7,6 +7,7 @@ import type {
   DeliveryRegion,
   SpecialOrder,
   ContactMessage,
+  BlogPost,
 } from "../data/seed";
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -207,4 +208,34 @@ export function rowToMessage(r: any): ContactMessage {
     message: r.message ?? "",
     createdAt: r.created_at ? Date.parse(r.created_at) : Date.now(),
   };
+}
+
+export function rowToBlogPost(r: any): BlogPost {
+  return {
+    id: r.id,
+    slug: r.slug ?? "",
+    title: r.title ?? "",
+    excerpt: r.excerpt ?? "",
+    coverUrl: r.cover_url ?? "",
+    body: r.body ?? "",
+    published: Boolean(r.published),
+    publishedAt: r.published_at ? Date.parse(r.published_at) : null,
+    createdAt: r.created_at ? Date.parse(r.created_at) : Date.now(),
+    updatedAt: r.updated_at ? Date.parse(r.updated_at) : Date.now(),
+  };
+}
+
+export function blogPostToRow(p: BlogPost) {
+  const row: Record<string, unknown> = {
+    slug: p.slug,
+    title: p.title,
+    excerpt: p.excerpt,
+    cover_url: p.coverUrl,
+    body: p.body,
+    published: p.published,
+    published_at: p.publishedAt ? new Date(p.publishedAt).toISOString() : null,
+    updated_at: new Date().toISOString(),
+  };
+  if (p.id) row.id = p.id;
+  return row;
 }

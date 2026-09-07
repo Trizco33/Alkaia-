@@ -23,6 +23,7 @@ import type {
   ContactMessage,
   DeliveryRegion,
   Settings,
+  BlogPost,
 } from "../data/seed";
 import {
   supabase,
@@ -39,6 +40,8 @@ import {
   regionToRow,
   rowToOrder,
   rowToMessage,
+  rowToBlogPost,
+  blogPostToRow,
 } from "../lib/supabase";
 
 const DB_KEY = "alkaia_db_v1";
@@ -58,6 +61,7 @@ interface DB {
   categories: Category[];
   settings: Settings;
   content: Record<string, string>;
+  posts: BlogPost[];
   deliveryRegions: DeliveryRegion[];
   orders: SpecialOrder[];
   messages: ContactMessage[];
@@ -75,6 +79,7 @@ function seedDB(): DB {
     categories: seedCategories,
     settings: seedSettings,
     content: { ...contentDefaults },
+    posts: [],
     deliveryRegions: seedDeliveryRegions,
     orders: [],
     messages: [],
@@ -135,6 +140,11 @@ export interface StoreValue {
   saveDeliveryRegion: (r: DeliveryRegion) => Promise<void>;
   deleteDeliveryRegion: (id: string) => Promise<void>;
 
+  posts: BlogPost[];
+  savePost: (p: BlogPost) => Promise<void>;
+  deletePost: (id: string) => Promise<void>;
+  postBySlug: (slug: string) => BlogPost | undefined;
+
   addOrder: (o: Omit<SpecialOrder, "id" | "status" | "createdAt">) => Promise<void>;
   setOrderStatus: (id: string, status: SpecialOrder["status"]) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
@@ -178,13 +188,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const loadPublicData = useCallback(async () => {
     if (!supabase) return;
     try {
-      const [cols, cats, prods, regions, sets, cont] = await Promise.all([
+      const [cols, cats, prods, regions, sets, cont, posts] = await Promise.all([
         supabase.from("collections").select("*").order("sort_order", { ascending: true }),
         supabase.from("categories").select("*"),
         supabase.from("products").select("*").order("created_at", { ascending: false }),
         supabase.from("delivery_regions").select("*"),
         supabase.from("settings").select("*").eq("id", 1).maybeSingle(),
         supabase.from("site_content").select("data").eq("id", 1).maybeSingle(),
+        supabase.from("blog_posts").select("*").order("published_at", { ascending: false, nullsFirst: true }),
       ]);
 
       const firstError = cols.error || cats.error || prods.error || regions.error;
@@ -198,6 +209,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         deliveryRegions: (regions.data || []).map(rowToRegion),
         settings: sets.data ? rowToSettings(sets.data, seedSettings) : prev.settings,
         content: mergeContent(cont.data?.data),
+        posts: (posts.data || []).map(rowToBlogPost),
       }));
       setError(null);
     } catch (e: any) {
@@ -235,10 +247,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const refreshAdminData = useCallback(async () => {
     if (!supabase || !isAuthed) return;
     try {
-      const [orders, messages, events] = await Promise.all([
+      const [orders, messages, events, posts] = await Promise.all([
         supabase.from("special_orders").select("*").order("created_at", { ascending: false }),
         supabase.from("contact_messages").select("*").order("created_at", { ascending: false }),
         supabase.from("analytics_events").select("*").order("created_at", { ascending: false }).limit(5000),
+        supabase.from("blog_posts").select("*").order("created_at", { ascending: false }),
       ]);
 
       const a = emptyAnalytics();
@@ -257,6 +270,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         orders: (orders.data || []).map(rowToOrder),
         messages: (messages.data || []).map(rowToMessage),
+        posts: posts.data ? posts.data.map(rowToBlogPost) : prev.posts,
         analytics: a,
       }));
     } catch (e) {
@@ -463,6 +477,40 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setDb((prev) => ({ ...prev, content: next }));
     };
 
+    /* ---- Blog ---- */
+    const savePost = async (p: BlogPost) => {
+      if (supabase) {
+        const row = blogPostToRow(p);
+        const { data, error } = p.id
+          ? await supabase.from("blog_posts").upsert(row).select().single()
+          : await supabase.from("blog_posts").insert(row).select().single();
+        if (error) throw new Error(error.message);
+        const saved = rowToBlogPost(data);
+        setDb((prev) => ({
+          ...prev,
+          posts: prev.posts.some((x) => x.id === saved.id)
+            ? prev.posts.map((x) => (x.id === saved.id ? saved : x))
+            : [saved, ...prev.posts],
+        }));
+        return;
+      }
+      const withId = p.id ? p : { ...p, id: uid() };
+      setDb((prev) => ({
+        ...prev,
+        posts: prev.posts.some((x) => x.id === withId.id)
+          ? prev.posts.map((x) => (x.id === withId.id ? withId : x))
+          : [withId, ...prev.posts],
+      }));
+    };
+
+    const deletePost = async (id: string) => {
+      if (supabase) {
+        const { error } = await supabase.from("blog_posts").delete().eq("id", id);
+        if (error) throw new Error(error.message);
+      }
+      setDb((prev) => ({ ...prev, posts: prev.posts.filter((p) => p.id !== id) }));
+    };
+
     /* ---- Regiões ---- */
     const saveDeliveryRegion = async (r: DeliveryRegion) => {
       if (supabase) {
@@ -593,6 +641,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       deleteCategory,
       updateSettings,
       updateContent,
+      posts: db.posts,
+      savePost,
+      deletePost,
+      postBySlug: (slug) => db.posts.find((p) => p.slug === slug),
       saveDeliveryRegion,
       deleteDeliveryRegion,
       addOrder,

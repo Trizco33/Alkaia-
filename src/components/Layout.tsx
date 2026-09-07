@@ -149,6 +149,7 @@ function Header() {
     { label: "Encomendas Especiais", to: "/encomendas" },
     { label: "Entrega e Retirada", to: "/entrega" },
     { label: "Sobre a Alkaia", to: "/sobre" },
+    { label: "Blog", to: "/blog" },
     { label: "FAQ", to: "/faq" },
     { label: "Contato", to: "/contato" },
   ];
@@ -344,6 +345,7 @@ function Footer() {
       title: "A Alkaia",
       links: [
         { label: "Sobre a Alkaia", to: "/sobre" },
+        { label: "Blog", to: "/blog" },
         { label: "Entrega e Retirada", to: "/entrega" },
         { label: "Encomendas Especiais", to: "/encomendas" },
       ],

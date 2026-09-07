@@ -99,3 +99,11 @@ Princípios:
 - Admin (`src/pages/admin/Admin.tsx`): aba **Site** renderiza `contentSchema` genericamente (input/textarea/`ImageField`); `ImageField` (preview + "Enviar foto" + campo URL) também usado em Produtos (append de linha) e Coleções. `extractImageUrl` aceita HTML colado (ex.: embed do ibb.co) e extrai só a URL.
 - Páginas ligadas ao content: `Layout` (faixa do topo), `Home`, `Sobre`, `VelasAromaticas`, `Massagem`, `Kits`. FAQ, footer e menu ficam fixos (segurança de rotas).
 - SQL idempotente em `supabase/site_content.sql` (já executado).
+
+## 9. Blog + BrowserRouter + sitemap dinâmico
+
+- Tabela `public.blog_posts` (slug unique, title, excerpt, cover_url, body, published, published_at): RLS select `published OR is_admin()` — a mesma query serve público (só publicados) e admin logado (inclui rascunhos, via `refreshAdminData`). Escrita só `is_admin()`. SQL idempotente em `supabase/blog.sql`.
+- Corpo do post é **texto simples** com duas regras: linha em branco separa parágrafos; linha começando com `## ` vira subtítulo (`<h2>`). Sem lib de markdown de propósito (bundle menor, simples para a cliente).
+- Páginas: `src/pages/Blog.tsx` (`BlogList` em `/blog`, `BlogPostPage` em `/blog/:slug`, ambas com `useSeo` e tracking `view_blog`/`view_blog_post`). Links no nav e no footer (`Layout.tsx`). Admin: aba **Blog** (`BlogManager` em `Admin.tsx`) com slug automático a partir do título, capa via `ImageField`, publicar/rascunho/despublicar.
+- **HashRouter → BrowserRouter**: URLs agora sem `#` (ex.: `/velas`). Componente `HashRedirect` no `App.tsx` redireciona links antigos `/#/rota?query` para `/rota?query` (preserva query string — o `back_url` do Mercado Pago em `create-order` continua com `/#/` e funciona via esse redirect; `create-order` não foi alterado de propósito). O catch-all do `vercel.json` (`/(.*) → /index.html`) faz o SPA fallback em produção.
+- **Sitemap dinâmico**: Edge Function `sitemap` (deployada com `--no-verify-jwt`) gera XML com as rotas estáticas + posts publicados (lastmod). `vercel.json` tem rewrite `/sitemap.xml → função` (antes do catch-all); o `public/sitemap.xml` estático foi removido (filesystem ganharia do rewrite). `robots.txt` segue apontando para `https://alkaia.com.br/sitemap.xml`.

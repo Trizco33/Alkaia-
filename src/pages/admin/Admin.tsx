@@ -5,7 +5,7 @@ import { IconFlame, IconClose, IconPlus, IconCheck } from "../../components/ui";
 import { supabase } from "../../lib/supabase";
 import { uploadImage } from "../../lib/upload";
 import { contentSchema, contentDefaults } from "../../data/content";
-import type { Product, Collection, DeliveryRegion } from "../../data/seed";
+import type { Product, Collection, DeliveryRegion, BlogPost } from "../../data/seed";
 
 const emptyRegion = (): Omit<DeliveryRegion, "id"> => ({ name: "", type: "entrega", note: "" });
 
@@ -475,6 +475,105 @@ function CollectionManager() {
   );
 }
 
+/* ---------------- Blog manager ---------------- */
+function slugify(s: string) {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function BlogManager() {
+  const { posts, savePost, deletePost } = useStore();
+  const [editing, setEditing] = useState<BlogPost | null>(null);
+  const [saving, setSaving] = useState(false);
+  const blank = (): BlogPost => ({
+    id: "", slug: "", title: "", excerpt: "", coverUrl: "", body: "",
+    published: false, publishedAt: null, createdAt: Date.now(), updatedAt: Date.now(),
+  });
+
+  if (editing) {
+    const f = editing;
+    const set = (patch: Partial<BlogPost>) => setEditing((p) => (p ? { ...p, ...patch } : p));
+    const submit = async (publish: boolean) => {
+      if (!f.title.trim()) { alert("Escreva um título para o post."); return; }
+      setSaving(true);
+      try {
+        await savePost({
+          ...f,
+          title: f.title.trim(),
+          slug: f.slug.trim() || slugify(f.title),
+          published: publish,
+          publishedAt: publish ? (f.publishedAt ?? Date.now()) : f.publishedAt,
+        });
+        setEditing(null);
+      } catch (err: any) {
+        alert(/duplicate|unique/i.test(err?.message || "") ? "Já existe um post com esse endereço (slug). Mude o título ou o slug." : err?.message || "Erro ao salvar o post.");
+      } finally {
+        setSaving(false);
+      }
+    };
+    return (
+      <form onSubmit={(e) => { e.preventDefault(); submit(f.published); }} className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-serif text-2xl text-ink">{f.id ? "Editar" : "Novo"} post</h2>
+          <button type="button" onClick={() => setEditing(null)} className="btn-outline !px-4 !py-2 !text-[12px]">Voltar</button>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2"><Label>Título</Label><input className={fieldCls()} value={f.title} onChange={(e) => set({ title: e.target.value, slug: f.id ? f.slug : slugify(e.target.value) })} placeholder="Ex.: Como cuidar da sua vela" /></div>
+          <div className="sm:col-span-2"><Label>Endereço do post (slug)</Label><input className={fieldCls()} value={f.slug} onChange={(e) => set({ slug: slugify(e.target.value) })} placeholder="como-cuidar-da-sua-vela" /></div>
+          <div className="sm:col-span-2"><ImageField label="Foto de capa" value={f.coverUrl} onChange={(url) => set({ coverUrl: url })} /></div>
+          <div className="sm:col-span-2"><Label>Resumo (aparece na lista do blog)</Label><textarea className={fieldCls()} rows={2} value={f.excerpt} onChange={(e) => set({ excerpt: e.target.value })} placeholder="Uma ou duas frases sobre o post" /></div>
+          <div className="sm:col-span-2">
+            <Label>Texto do post</Label>
+            <textarea className={fieldCls()} rows={14} value={f.body} onChange={(e) => set({ body: e.target.value })} placeholder={"Escreva aqui. Deixe uma linha em branco entre os parágrafos.\n\nPara criar um subtítulo, comece a linha com ## — por exemplo:\n## Meu subtítulo"} />
+            <p className="mt-1 text-[12px] text-ink-soft">Dica: linha em branco separa parágrafos; comece uma linha com <code className="rounded bg-ink/5 px-1">##</code> para virar subtítulo.</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" disabled={saving} onClick={() => submit(true)} className="btn-primary">{saving ? "Salvando..." : f.published ? "Salvar alterações" : "Publicar post"}</button>
+          <button type="button" disabled={saving} onClick={() => submit(false)} className="btn-outline">{f.published ? "Despublicar (voltar a rascunho)" : "Salvar como rascunho"}</button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-2xl text-ink">Blog</h2>
+        <button onClick={() => setEditing(blank())} className="btn-primary !px-4 !py-2 !text-[12px]"><IconPlus className="h-4 w-4" /> Novo post</button>
+      </div>
+      {posts.length === 0 ? (
+        <p className="mt-6 text-[13px] text-ink-soft">Nenhum post ainda. Toque em "Novo post" para escrever o primeiro. ✍️</p>
+      ) : (
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {posts.map((p) => (
+            <div key={p.id} className="rounded-[2px] border border-ink/10 bg-ghost p-4">
+              <div className="flex items-start gap-3">
+                {p.coverUrl && <img src={p.coverUrl} alt="" className="h-14 w-14 shrink-0 rounded-[2px] object-cover" />}
+                <div className="min-w-0">
+                  <p className="font-serif text-lg text-ink">{p.title}</p>
+                  <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-[11px] ${p.published ? "bg-terra/10 text-terra-dark" : "bg-ink/8 text-ink-soft"}`}>
+                    {p.published ? "Publicado" : "Rascunho"}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button onClick={() => setEditing(p)} className="btn-outline !px-3 !py-1.5 !text-[12px]">Editar</button>
+                <button
+                  onClick={async () => {
+                    if (!confirm(`Excluir o post "${p.title}"?`)) return;
+                    try { await deletePost(p.id); } catch (e: any) { alert(e?.message || "Erro ao excluir."); }
+                  }}
+                  className="btn-outline !px-3 !py-1.5 !text-[12px] !text-terra"
+                >Excluir</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---------------- Categories manager ---------------- */
 function CategoryManager() {
   const { categories, saveCategory, deleteCategory } = useStore();
@@ -940,7 +1039,7 @@ function SiteContentManager() {
 }
 
 /* ---------------- Shell ---------------- */
-const tabs = ["Dashboard", "Vendas", "Site", "Produtos", "Coleções", "Categorias", "Encomendas", "Mensagens", "Configurações"] as const;
+const tabs = ["Dashboard", "Vendas", "Site", "Blog", "Produtos", "Coleções", "Categorias", "Encomendas", "Mensagens", "Configurações"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function Admin() {
@@ -1004,6 +1103,7 @@ export default function Admin() {
           {tab === "Dashboard" && <Dashboard />}
           {tab === "Vendas" && <SalesManager />}
           {tab === "Site" && <SiteContentManager />}
+          {tab === "Blog" && <BlogManager />}
           {tab === "Produtos" && <ProductManager />}
           {tab === "Coleções" && <CollectionManager />}
           {tab === "Categorias" && <CategoryManager />}
