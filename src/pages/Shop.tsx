@@ -18,10 +18,15 @@ import {
 import {
   quoteShipping,
   createOrder,
+  processPayment,
+  fetchOrderStatus,
   isCheckoutConfigured,
   type ShippingOption,
   type CheckoutAddress,
+  type CreateOrderInput,
+  type ProcessPaymentResult,
 } from "../lib/checkout";
+import { mountPaymentBrick, isPaymentBrickConfigured, friendlyRejection } from "../lib/mercadopago";
 
 /* ============================================================
    CARRINHO — /carrinho
@@ -155,7 +160,7 @@ const onlyDigits = (s: string) => s.replace(/\D/g, "");
 
 export function Checkout() {
   const { formatPrice, track } = useStore();
-  const { items, subtotal } = useCart();
+  const { items, subtotal, clear } = useCart();
   useSeo("Checkout", "Finalize sua compra Alkaia com pagamento seguro via Mercado Pago.");
 
   const [name, setName] = useState("");
@@ -179,6 +184,15 @@ export function Checkout() {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  /* Checkout transparente (Payment Brick) */
+  const [step, setStep] = useState<"dados" | "pagamento">("dados");
+  const [brickReady, setBrickReady] = useState(false);
+  const [brickErr, setBrickErr] = useState<string | null>(null);
+  const [payErr, setPayErr] = useState<string | null>(null);
+  const [result, setResult] = useState<ProcessPaymentResult | null>(null);
+  const [pixPaid, setPixPaid] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     track("view_checkout", {});
@@ -271,6 +285,183 @@ export function Checkout() {
     }
   }
 
+  /* ---------- Checkout transparente (Payment Brick) ---------- */
+
+  function orderInput(): CreateOrderInput {
+    return {
+      items: items.map((i) => ({ productId: i.productId, qty: i.qty })),
+      customer: { name: name.trim(), email: email.trim(), phone: onlyDigits(phone) },
+      shipping:
+        method === "retirada"
+          ? { method: "retirada" }
+          : { method, address: { cep: cepDigits, ...addr } },
+      note: note.trim() || undefined,
+    };
+  }
+
+  /* Monta o Brick quando entra na etapa de pagamento (e desmonta ao sair) */
+  useEffect(() => {
+    if (step !== "pagamento" || result || !isPaymentBrickConfigured || total === null) return;
+    let alive = true;
+    let controller: { unmount: () => void } | null = null;
+    setBrickReady(false);
+    setBrickErr(null);
+    setPayErr(null);
+    const input = orderInput();
+    mountPaymentBrick({
+      containerId: "paymentBrick_container",
+      amount: Math.round(total * 100) / 100,
+      payerEmail: input.customer.email,
+      onSubmit: async ({ formData }) => {
+        setPayErr(null);
+        let res: ProcessPaymentResult;
+        try {
+          res = await processPayment({ ...input, payment: formData });
+        } catch (e: any) {
+          setPayErr(e?.message || "Não foi possível processar o pagamento. Tente novamente.");
+          throw e; // libera o botão do Brick para nova tentativa
+        }
+        if (res.status === "rejected" || res.status === "cancelled") {
+          setPayErr(friendlyRejection(res.statusDetail));
+          throw new Error(res.statusDetail); // idem
+        }
+        track("begin_payment", {});
+        setResult(res);
+        if (res.status === "approved" || res.boleto) clear();
+        window.scrollTo({ top: 0 });
+      },
+      onReady: () => {
+        if (alive) setBrickReady(true);
+      },
+      onError: (e) => {
+        console.error("brick", e);
+        if (alive) setBrickErr("Não foi possível carregar o pagamento. Recarregue a página e tente de novo.");
+      },
+    })
+      .then((c) => {
+        if (!alive) c.unmount();
+        else controller = c;
+      })
+      .catch((e: any) => {
+        if (alive) setBrickErr(e?.message || "Não foi possível carregar o pagamento.");
+      });
+    return () => {
+      alive = false;
+      try {
+        controller?.unmount();
+      } catch {
+        /* já desmontado */
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, result]);
+
+  /* Pix: consulta o status do pedido até a confirmação */
+  useEffect(() => {
+    if (!result?.pix || pixPaid) return;
+    const t = setInterval(() => {
+      fetchOrderStatus(result.orderId)
+        .then(({ status }) => {
+          if (status === "pago") {
+            setPixPaid(true);
+            clear();
+          }
+        })
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, pixPaid]);
+
+  function copyPix() {
+    if (!result?.pix?.qrCode) return;
+    navigator.clipboard
+      .writeText(result.pix.qrCode)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      })
+      .catch(() => {});
+  }
+
+  /* ---------- Telas de resultado do pagamento ---------- */
+  if (result && (result.status === "approved" || pixPaid)) {
+    return (
+      <div className="shell py-28 text-center">
+        <Reveal>
+          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-linen text-olive">
+            <IconCheck className="h-8 w-8" />
+          </span>
+          <h1 className="mt-6 font-serif text-4xl text-ink sm:text-5xl">Pedido confirmado!</h1>
+          <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-ink-soft">
+            Recebemos seu pagamento. Em breve entraremos em contato pelo e-mail ou WhatsApp
+            informado para combinar a entrega ou retirada.
+          </p>
+          <p className="mt-4 text-[12px] text-ink-soft/70">Pedido: {result.orderId}</p>
+          <Link to="/velas" className="btn-primary mt-9">Continuar navegando</Link>
+        </Reveal>
+      </div>
+    );
+  }
+
+  if (result?.pix) {
+    return (
+      <div className="shell py-16 text-center sm:py-20">
+        <Reveal>
+          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-linen text-terra">
+            <IconFlame className="h-8 w-8 animate-flicker" />
+          </span>
+          <h1 className="mt-6 font-serif text-4xl text-ink sm:text-5xl">Falta só pagar o Pix.</h1>
+          <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-ink-soft">
+            Abra o app do seu banco, escaneie o QR code ou use o código copia e cola.
+            Assim que o pagamento cair, esta página confirma sozinha.
+          </p>
+          {result.pix.qrCodeBase64 && (
+            <img
+              src={`data:image/png;base64,${result.pix.qrCodeBase64}`}
+              alt="QR code do Pix"
+              className="mx-auto mt-8 h-56 w-56 rounded-[2px] border border-ink/10 bg-white p-2"
+            />
+          )}
+          <div className="mx-auto mt-6 max-w-md">
+            <p className="break-all rounded-[2px] border border-ink/10 bg-ghost px-4 py-3 text-left text-[12px] text-ink-soft">
+              {result.pix.qrCode}
+            </p>
+            <button onClick={copyPix} className="btn-primary mt-4 w-full">
+              {copied ? "Código copiado!" : "Copiar código Pix"}
+            </button>
+          </div>
+          <p className="mt-6 text-[13px] text-ink-soft">Aguardando confirmação do pagamento…</p>
+          <p className="mt-2 text-[12px] text-ink-soft/70">Pedido: {result.orderId}</p>
+        </Reveal>
+      </div>
+    );
+  }
+
+  if (result?.boleto) {
+    return (
+      <div className="shell py-28 text-center">
+        <Reveal>
+          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-linen text-olive">
+            <IconCheck className="h-8 w-8" />
+          </span>
+          <h1 className="mt-6 font-serif text-4xl text-ink sm:text-5xl">Boleto gerado!</h1>
+          <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-ink-soft">
+            Seu pedido foi registrado. Pague o boleto até o vencimento — a confirmação
+            leva até 2 dias úteis e você receberá um e-mail quando o pagamento cair.
+          </p>
+          <p className="mt-4 text-[12px] text-ink-soft/70">Pedido: {result.orderId}</p>
+          <div className="mt-9 flex flex-wrap justify-center gap-3">
+            <a href={result.boleto.url} target="_blank" rel="noreferrer" className="btn-primary">
+              Abrir boleto <IconArrow className="h-4 w-4" />
+            </a>
+            <Link to="/velas" className="btn-outline">Continuar navegando</Link>
+          </div>
+        </Reveal>
+      </div>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <div className="shell py-28 text-center">
@@ -291,7 +482,7 @@ export function Checkout() {
       )}
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_380px]">
-        <div className="space-y-10">
+        <div className={step === "dados" ? "space-y-10" : "hidden"}>
           {/* 1. Dados */}
           <section>
             <h2 className="flex items-center gap-3 font-serif text-2xl text-ink">
@@ -421,6 +612,35 @@ export function Checkout() {
           </section>
         </div>
 
+        {/* 4. Pagamento (Payment Brick — dentro do site) */}
+        {step === "pagamento" && (
+          <div className="space-y-6">
+            <section>
+              <h2 className="flex items-center gap-3 font-serif text-2xl text-ink">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-linen text-[13px] font-medium text-terra">4</span>
+                Pagamento
+              </h2>
+              <button
+                onClick={() => setStep("dados")}
+                className="mt-3 text-[13px] text-ink-soft underline underline-offset-2 hover:text-ink"
+              >
+                ← Voltar e alterar meus dados
+              </button>
+
+              {!brickReady && !brickErr && (
+                <p className="mt-6 text-[14px] text-ink-soft">Carregando o pagamento seguro…</p>
+              )}
+              {brickErr && (
+                <p className="mt-6 rounded-[2px] bg-terra/10 px-4 py-3 text-[13px] text-terra-dark">{brickErr}</p>
+              )}
+              {payErr && (
+                <p className="mt-4 rounded-[2px] bg-terra/10 px-4 py-3 text-[13px] text-terra-dark">{payErr}</p>
+              )}
+              <div id="paymentBrick_container" className="mt-4" />
+            </section>
+          </div>
+        )}
+
         {/* Resumo lateral */}
         <div className="h-fit rounded-[2px] border border-ink/10 bg-ghost p-6 lg:sticky lg:top-24">
           <h2 className="font-serif text-2xl text-ink">Seu pedido</h2>
@@ -455,13 +675,41 @@ export function Checkout() {
             </div>
           </div>
           {err && <p className="mt-4 rounded-[2px] bg-terra/10 px-3 py-2 text-[13px] text-terra-dark">{err}</p>}
-          <button onClick={pay} disabled={!canPay || busy || !isCheckoutConfigured} className="btn-primary mt-5 w-full">
-            {busy ? "Redirecionando…" : "Pagar com Mercado Pago"}
-          </button>
-          <p className="mt-4 text-center text-[11px] leading-relaxed text-ink-soft/80">
-            Você será redirecionada para o ambiente seguro do Mercado Pago.
-            <br />Pix · Cartão de crédito · Boleto
-          </p>
+          {isPaymentBrickConfigured ? (
+            step === "dados" ? (
+              <>
+                <button
+                  onClick={() => {
+                    if (!canPay) return;
+                    setStep("pagamento");
+                    window.scrollTo({ top: 0 });
+                  }}
+                  disabled={!canPay || !isCheckoutConfigured}
+                  className="btn-primary mt-5 w-full"
+                >
+                  Ir para o pagamento <IconArrow className="h-4 w-4" />
+                </button>
+                <p className="mt-4 text-center text-[11px] leading-relaxed text-ink-soft/80">
+                  Pagamento seguro sem sair do site, processado pelo Mercado Pago.
+                  <br />Pix · Cartão de crédito · Boleto
+                </p>
+              </>
+            ) : (
+              <p className="mt-5 text-center text-[12px] leading-relaxed text-ink-soft">
+                Escolha a forma de pagamento ao lado para concluir.
+              </p>
+            )
+          ) : (
+            <>
+              <button onClick={pay} disabled={!canPay || busy || !isCheckoutConfigured} className="btn-primary mt-5 w-full">
+                {busy ? "Redirecionando…" : "Pagar com Mercado Pago"}
+              </button>
+              <p className="mt-4 text-center text-[11px] leading-relaxed text-ink-soft/80">
+                Você será redirecionada para o ambiente seguro do Mercado Pago.
+                <br />Pix · Cartão de crédito · Boleto
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

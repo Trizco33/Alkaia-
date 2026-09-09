@@ -65,3 +65,32 @@ export interface CreateOrderInput {
 export function createOrder(input: CreateOrderInput) {
   return callFn<{ orderId: string; initPoint: string }>("create-order", input);
 }
+
+/* ---------- Checkout transparente (Payment Brick) ---------- */
+
+/** formData entregue pelo onSubmit do Payment Brick (repassado como está). */
+export interface BrickPaymentData {
+  payment_method_id?: string;
+  token?: string;
+  installments?: number;
+  issuer_id?: string | number;
+  payer?: Record<string, unknown>;
+  [k: string]: unknown;
+}
+
+export interface ProcessPaymentResult {
+  orderId: string;
+  paymentId: string;
+  status: string; // approved | pending | in_process | rejected | ...
+  statusDetail: string;
+  pix?: { qrCode: string; qrCodeBase64: string; ticketUrl: string };
+  boleto?: { url: string };
+}
+
+export function processPayment(input: CreateOrderInput & { payment: BrickPaymentData }) {
+  return callFn<ProcessPaymentResult>("process-payment", input);
+}
+
+export function fetchOrderStatus(orderId: string) {
+  return callFn<{ status: string; mpStatus: string | null }>("order-status", { orderId });
+}

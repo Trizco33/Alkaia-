@@ -78,7 +78,9 @@ Edge Functions (Supabase, Deno):
 | Function | Papel | JWT |
 |---|---|---|
 | `shipping-quote` | Cota frete nos Correios via SuperFrete (PAC/SEDEX) | sim |
-| `create-order` | Valida pedido, insere em `orders`, cria preference MP | sim |
+| `create-order` | Valida pedido, insere em `orders`, cria preference MP (Checkout Pro — legado/fallback) | sim |
+| `process-payment` | Checkout transparente: valida pedido, insere em `orders`, cria pagamento direto via `/v1/payments` (Pix/cartão/boleto) | sim |
+| `order-status` | Polling do Pix: `POST {orderId}` → `{status, mpStatus}` (só status, nada do cliente) | sim |
 | `mp-webhook` | Recebe notificações do MP, atualiza status + estoque | não (`verify_jwt = false`) |
 
 Secrets das functions (via `supabase secrets set`): `MP_ACCESS_TOKEN`, `SUPERFRETE_TOKEN`, `SITE_URL`, `FROM_CEP`.
@@ -89,6 +91,29 @@ Princípios:
 - **Fallback**: sem as functions/secrets configuradas, o checkout mostra aviso de manutenção — o restante do site funciona normalmente.
 - Rotas novas: `/carrinho`, `/checkout`, `/pedido/confirmacao`; `/onde-comprar` redireciona para `/velas`.
 - Gestão de pedidos: aba **Vendas** no painel admin (status + código de rastreio).
+
+### Checkout transparente (Payment Brick — Pix + cartão + boleto)
+
+Pagamento dentro do site, sem redirect pro Mercado Pago (Checkout Pro empurrava o app do ML no celular):
+
+```
+Checkout etapa 1 (dados/entrega) → "Ir para o pagamento"
+  → Payment Brick (src/lib/mercadopago.ts: loadSdk + mountPaymentBrick;
+    paymentMethods: creditCard/bankTransfer/ticket — SEM `mercadoPago`, evita redirect)
+  → onSubmit → Edge Function process-payment:
+    revalida preço/estoque/frete (mesma lógica do create-order), insere em `orders`,
+    POST /v1/payments com transaction_amount DO SERVIDOR + X-Idempotency-Key,
+    external_reference = order.id, notification_url → mp-webhook
+  → Resposta: approved → "Pedido confirmado!"; Pix pendente → QR base64 + copia-e-cola
+    + polling order-status a cada 5s; boleto → link (transaction_details.external_resource_url,
+    vencimento 5 dias); cartão recusado → pedido `cancelado` + mensagem PT (friendlyRejection)
+```
+
+- **Public key** do MP fica hardcoded em `src/lib/mercadopago.ts` (não é secreta; evita env var no Vercel). Sem chave → fallback automático pro botão legado Checkout Pro.
+- **Baixa de estoque continua EXCLUSIVA do mp-webhook** (idempotente via `stock_debited`) — evita débito duplo entre process-payment e webhook.
+- Cada tentativa de cartão recusado cria um pedido novo (o anterior fica `cancelado`).
+- Boleto: `payer.address` cai pro endereço de entrega; retirada sem endereço pode ser recusada pelo MP → cliente vê erro amigável e escolhe Pix/cartão.
+- `create-order` e `mp-webhook` NÃO foram alterados — rollback do checkout novo = 1 commit no frontend.
 
 ## 8. CMS — textos e fotos editáveis (aba "Site" no admin)
 
