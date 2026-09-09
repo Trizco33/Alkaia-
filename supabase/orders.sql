@@ -63,8 +63,15 @@ create policy "orders_admin_update" on public.orders
   using (public.is_admin())
   with check (public.is_admin());
 
--- (sem policy de insert/delete para anon/authenticated:
+-- (sem policy de insert para anon/authenticated:
 --  inserção só via service role, que ignora RLS)
+
+-- Admin pode excluir pedidos que não representam venda concluída
+-- (pedido pago/enviado/entregue fica protegido contra exclusão acidental).
+drop policy if exists "orders_admin_delete" on public.orders;
+create policy "orders_admin_delete" on public.orders
+  for delete to authenticated
+  using (public.is_admin() and status in ('pendente', 'cancelado', 'reembolsado'));
 
 -- ============================================================
 -- Atualização de conteúdo: envio agora é pelos Correios via site

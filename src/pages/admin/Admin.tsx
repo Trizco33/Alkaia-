@@ -750,6 +750,19 @@ function SalesManager() {
     else setSales((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   };
 
+  /* Só pedidos que não representam venda concluída podem ser excluídos
+     (o banco também bloqueia — policy orders_admin_delete). */
+  const canDelete = (s: Sale) => ["pendente", "cancelado", "reembolsado"].includes(s.status);
+
+  const remove = async (o: Sale) => {
+    if (!supabase) return;
+    if (!confirm(`Excluir o pedido nº ${o.id.slice(0, 8)} de ${o.customer_name}? Essa ação não pode ser desfeita.`)) return;
+    const { error, count } = await supabase.from("orders").delete({ count: "exact" }).eq("id", o.id);
+    if (error) alert("Erro ao excluir: " + error.message);
+    else if (!count) alert("Este pedido não pode ser excluído (apenas pedidos aguardando pagamento, cancelados ou reembolsados).");
+    else setSales((prev) => prev.filter((s) => s.id !== o.id));
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -815,6 +828,12 @@ function SalesManager() {
                       if (v !== (o.tracking_code || "")) update(o.id, { tracking_code: v });
                     }}
                   />
+                  {canDelete(o) && (
+                    <button
+                      onClick={() => remove(o)}
+                      className="btn-outline !px-3 !py-1.5 !text-[12px] !text-terra"
+                    >Excluir pedido</button>
+                  )}
                 </div>
               </div>
             </div>
