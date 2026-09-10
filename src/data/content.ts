@@ -159,6 +159,20 @@ export const contentDefaults: Record<string, string> = {
   "kits.body.bullet4": "Composições para spas e profissionais",
   "kits.body.btn": "Solicitar um kit",
   "kits.body.image": "https://images.pexels.com/photos/15683359/pexels-photo-15683359.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=900&w=720",
+
+  /* ---------- Página de Links (bio do Instagram) ---------- */
+  "links.logo": "/brand/logo-terracota-sm.png",
+  "links.subtitle": "Velas artesanais · Artur Nogueira — SP",
+  "links.btn.site": "Loja online",
+  "links.btn.whatsapp": "Fale no WhatsApp",
+  "links.btn.instagram": "Instagram",
+  "links.btn.tiktok": "TikTok",
+  "links.btn.shopee": "Shopee",
+  "links.btn.mercadolivre": "Mercado Livre",
+  "links.btn.email": "E-mail",
+  "links.catalog.title": "Nossas velas",
+  "links.catalog.text": "Toque em uma vela para ver detalhes e comprar.",
+  "links.footer": "www.alkaia.com.br",
 };
 
 export const contentSchema: ContentGroup[] = [
@@ -335,6 +349,25 @@ export const contentSchema: ContentGroup[] = [
       { key: "kits.body.bullet3", label: "Item 3 da lista", kind: "text" },
       { key: "kits.body.bullet4", label: "Item 4 da lista", kind: "text" },
       { key: "kits.body.btn", label: "Texto do botão", kind: "text" },
+    ],
+  },
+  {
+    title: "Página de Links — bio do Instagram (alkaia.com.br/links)",
+    description:
+      "Página com os links e o catálogo para colocar na bio do Instagram. Os endereços de WhatsApp, Instagram, TikTok, Shopee e Mercado Livre vêm da aba Configurações; as velas vêm do Catálogo (só as ativas aparecem).",
+    fields: [
+      { key: "links.logo", label: "Logo (imagem do topo)", kind: "image" },
+      { key: "links.subtitle", label: "Frase abaixo da logo", kind: "long" },
+      { key: "links.btn.site", label: "Texto do botão da loja", kind: "text" },
+      { key: "links.btn.whatsapp", label: "Texto do botão do WhatsApp", kind: "text" },
+      { key: "links.btn.instagram", label: "Texto do botão do Instagram", kind: "text" },
+      { key: "links.btn.tiktok", label: "Texto do botão do TikTok", kind: "text" },
+      { key: "links.btn.shopee", label: "Texto do botão da Shopee", kind: "text" },
+      { key: "links.btn.mercadolivre", label: "Texto do botão do Mercado Livre", kind: "text" },
+      { key: "links.btn.email", label: "Texto do botão de e-mail", kind: "text" },
+      { key: "links.catalog.title", label: "Título da seção do catálogo", kind: "text" },
+      { key: "links.catalog.text", label: "Texto abaixo do título do catálogo", kind: "long" },
+      { key: "links.footer", label: "Texto do rodapé", kind: "text" },
     ],
   },
 ];

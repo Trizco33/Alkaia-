@@ -12,6 +12,7 @@ import { Encomendas, Faq, Contato } from "./pages/Help";
 import { Cart, Checkout, OrderConfirm } from "./pages/Shop";
 import Ritual from "./pages/Ritual";
 import { BlogList, BlogPostPage } from "./pages/Blog";
+import Links from "./pages/Links";
 import Admin from "./pages/admin/Admin";
 
 /** Compatibilidade: redireciona links antigos com # (ex.: /#/velas → /velas). */
@@ -53,6 +54,7 @@ export default function App() {
               <Route path="/blog" element={<BlogList />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
             </Route>
+            <Route path="/links" element={<Links />} />
             <Route path="/admin" element={<Admin />} />
           </Routes>
         </BrowserRouter>
