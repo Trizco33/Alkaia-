@@ -889,6 +889,8 @@ function SettingsManager() {
     { label: "WhatsApp (exibição)", key: "whatsappDisplay" },
     { label: "Instagram", key: "instagram" },
     { label: "TikTok", key: "tiktok" },
+    { label: "Shopee (link da lojinha)", key: "shopee" },
+    { label: "Mercado Livre (link da loja)", key: "mercadolivre" },
     { label: "Cidade", key: "city" },
   ];
 
